@@ -4,8 +4,8 @@ author: 'GitHub'
 inputs:
   tools:
     description: URL of CodeQL tools
-    default: 'https://github.com/github/codeql-cli-binaries/releases/download/v2.0.0/codeql.zip'
     required: false
+    default: https://github.com/Anthophila/codeql-action/releases/download/codeql-bundle/codeql-bundle.zip
 runs:
   using: 'node12'
   main: '../lib/setup-codeql.js'

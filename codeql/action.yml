@@ -1,0 +1,14 @@
+name: 'CodeQL'
+description: 'CodeQL analysis with `post` script'
+author: 'GitHub'
+inputs:
+  tools:
+    description: URL of CodeQL tools
+    required: true
+  language:
+    description: The language to analyse
+    required: true
+runs:
+  using: 'node12'
+  main: '../lib/setup-tracer.js'
+  post: '../lib/finalize-db.js'

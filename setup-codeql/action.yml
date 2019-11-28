@@ -1,0 +1,11 @@
+name: 'Setup CodeQL'
+description: 'Setup CodeQL tools'
+author: 'GitHub'
+inputs:
+  tools:
+    description: URL of CodeQL tools
+    default: 'https://github.com/github/codeql-cli-binaries/releases/download/v2.0.0/codeql.zip'
+    required: false
+runs:
+  using: 'node12'
+  main: '../lib/setup-codeql.js'

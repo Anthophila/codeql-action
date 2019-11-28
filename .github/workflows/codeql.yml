@@ -1,0 +1,20 @@
+name: "CodeQL action"
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: ./codeql/init
+      with: 
+        language: javascript
+    - uses: ./codeql/finish
+    - uses: actions/upload-artifact@master
+      with:
+        name: results
+        path: ../codeql_results/sarif
+

@@ -1,0 +1,7 @@
+name: 'CodeQL: Finish'
+description: 'Finalize CodeQL database'
+author: 'GitHub'
+inputs: {}
+runs:
+  using: 'node12'
+  main: '../../lib/finalize-db.js'

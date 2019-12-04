@@ -1,0 +1,10 @@
+name: 'CodeQL end to end analysis'
+description: 'Run a bunch of QL queries on your repo'
+author: 'GitHub'
+inputs:
+  language:
+    description: language to analyse 
+    required: true
+runs:
+  using: 'node12'
+  main: '../../lib/extraction-and-analysis.js'

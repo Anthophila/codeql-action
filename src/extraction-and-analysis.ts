@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as io from '@actions/io';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as setuptools from './setup-tools';
@@ -19,7 +20,7 @@ async function run() {
                 '--language='+language ];
     const buildFilePath = findAuxBuildFile(language);
     if (buildFilePath)
-      extractionCall.concat(['--command='+buildFilePath]);
+      extractionCall = extractionCall.concat(['--command='+buildFilePath]);
     core.endGroup();
     
     core.startGroup('Create database');
@@ -28,9 +29,10 @@ async function run() {
 
     core.startGroup('Run analysis');
     const sarifFolder = path.resolve("codeql_alerts");
+    io.mkdirP(sarifFolder);
     await exec.exec(codeqlSetup.cmd, ['database', 'analyze', languageDatabase, 
                                     '--format=sarif-latest',
-                                    '--output=' + path.join(sarifFolder, languageDatabase + '.sarif'),
+                                    '--output=' + path.join(sarifFolder, language + '.sarif'),
                                     language + '-lgtm.qls']);
     core.endGroup();
 

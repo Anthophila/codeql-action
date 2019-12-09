@@ -6,6 +6,8 @@ import * as io from '@actions/io';
 import * as path from 'path';
 import * as fs from 'fs';
 
+import * as jszip from 'jszip';
+
 async function run() {
   try {
     core.exportVariable('ODASA_TRACER_CONFIGURATION', '');
@@ -31,6 +33,10 @@ async function run() {
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
     }
+
+    const zip = new jszip.JSZip();
+    zip.file('alerts.sarif', sarif_data);
+    const zipped_sarif = await zip.generateAsync({type:"base64"});
 
     const { GITHUB_TOKEN, GITHUB_REF } = process.env;
     if (GITHUB_TOKEN && GITHUB_REF) {

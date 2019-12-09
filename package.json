@@ -26,6 +26,7 @@
     "@actions/io": "^1.0.1",
     "@actions/tool-cache": "^1.1.2",
     "fs": "0.0.1-security",
+    "jszip": "^3.2.2",
     "path": "^0.12.7",
     "tmp": "^0.1.0"
   },

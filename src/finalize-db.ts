@@ -1,5 +1,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as github from '@actions/github';
+
 import * as io from '@actions/io';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -20,11 +22,37 @@ async function run() {
 
     const sarifFolder = path.join(resultsFolder, 'sarif');
     io.mkdirP(sarifFolder);
+    
+    let sarif_data = '';
     for (let database of fs.readdirSync(databaseFolder)) {
+        const sarifFile = path.join(sarifFolder, database + '.sarif');
         await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database), 
-                                    '--format=sarif-latest', '--output=' + path.join(sarifFolder, database + '.sarif'),
+                                    '--format=sarif-latest', '--output=' + sarifFile,
                                     database + '-lgtm.qls']);
+        sarif_data = fs.readFileSync(sarifFile,'utf8');
     }
+
+    const { GITHUB_TOKEN, GITHUB_REF } = process.env;
+    if (GITHUB_TOKEN && GITHUB_REF) {
+        const octokit = new github.GitHub(GITHUB_TOKEN);
+
+        const { data: checks } = await octokit.checks.listForRef(
+          {
+            ...github.context.repo,
+            ref: GITHUB_REF
+          });
+
+        const check_run_id = checks.check_runs[0].id;
+
+        await octokit.checks.update({
+         ...github.context.repo,
+         check_run_id,
+         output: {
+            title: 'SARIF alerts file',
+            summary: 'etc',
+            text: sarif_data
+          }});
+      }
   } catch (error) {
     core.setFailed(error.message);
   }

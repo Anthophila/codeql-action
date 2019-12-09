@@ -48,8 +48,8 @@ async function run() {
          ...github.context.repo,
          check_run_id,
          output: {
-            title: 'SARIF alerts file',
-            summary: 'etc',
+            title: 'SARIF alerts in a base64 zip',
+            summary: 'base64 zip',
             text: sarif_data
           }});
       }

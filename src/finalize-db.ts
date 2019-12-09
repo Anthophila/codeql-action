@@ -6,7 +6,7 @@ import * as io from '@actions/io';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import * as jszip from 'jszip';
+import JSZip from 'jszip';
 
 async function run() {
   try {
@@ -34,9 +34,9 @@ async function run() {
         sarif_data = fs.readFileSync(sarifFile,'utf8');
     }
 
-    const zip = new jszip.JSZip();
+    const zip = new JSZip();
     zip.file('alerts.sarif', sarif_data);
-    const zipped_sarif = await zip.generateAsync({type:"base64"});
+    const zipped_sarif = await zip.generateAsync({type:"base64", compression:"DEFLATE"});
 
     const { GITHUB_TOKEN, GITHUB_REF } = process.env;
     if (GITHUB_TOKEN && GITHUB_REF) {
@@ -56,7 +56,7 @@ async function run() {
          output: {
             title: 'SARIF alerts file',
             summary: 'etc',
-            text: sarif_data
+            text: zipped_sarif
           }});
       }
   } catch (error) {

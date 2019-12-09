@@ -25,17 +25,15 @@ async function run() {
     const sarifFolder = path.join(resultsFolder, 'sarif');
     io.mkdirP(sarifFolder);
     
-    let sarif_data = '';
+    const zip = new JSZip();
     for (let database of fs.readdirSync(databaseFolder)) {
         const sarifFile = path.join(sarifFolder, database + '.sarif');
         await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database), 
                                     '--format=sarif-latest', '--output=' + sarifFile,
                                     database + '-lgtm.qls']);
-        sarif_data = fs.readFileSync(sarifFile,'utf8');
+        const sarif_data = fs.readFileSync(sarifFile,'utf8');
+        zip.file(database+'.sarif', sarif_data);
     }
-
-    const zip = new JSZip();
-    zip.file('alerts.sarif', sarif_data);
     const zipped_sarif = await zip.generateAsync({type:"base64", compression:"DEFLATE"});
 
     const { GITHUB_TOKEN, GITHUB_REF } = process.env;

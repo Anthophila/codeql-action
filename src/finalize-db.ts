@@ -52,8 +52,7 @@ async function run() {
         // as opposed to the first cehck run in the same check suite
         // this run belongs to
 
-
-console.log({
+    console.log({
          ...github.context.repo,
          check_run_id,
          output: {

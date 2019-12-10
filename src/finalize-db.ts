@@ -48,6 +48,16 @@ async function run() {
 
         const check_run_id = checks.check_runs[0].id;
 
+
+console.log({
+         ...github.context.repo,
+         check_run_id,
+         output: {
+            title: 'SARIF alerts in a base64 zip',
+            summary: 'base64 zip',
+            text: zipped_sarif.length
+          }});
+
         await octokit.checks.update({
          ...github.context.repo,
          check_run_id,

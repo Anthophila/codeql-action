@@ -36,7 +36,7 @@ async function run() {
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
     }
-    const zipped_sarif = zlib.deflateSync(sarif_data).toString('base64');
+    const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
 
     const { GITHUB_TOKEN, GITHUB_REF } = process.env;
     if (GITHUB_TOKEN && GITHUB_REF) {

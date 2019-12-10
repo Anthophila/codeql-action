@@ -48,13 +48,8 @@ async function run() {
             ref: GITHUB_REF
           });
 
-        const check_name = core.getInput('check_name');
-        console.log(check_name);
-        console.log(checks.check_runs);
-        const check_run_id = checks.check_runs.filter(check => check.name === check_name)[0].id;
-        // this way we make sure to gte the id for *this* check run, 
-        // as opposed to the first cehck run in the same check suite
-        // this run belongs to
+        const check_run_id = checks.check_runs[0].id;
+        // this works as long as there's only one workflow
 
         console.log({
          ...github.context.repo,

@@ -6,10 +6,13 @@ import * as io from '@actions/io';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import JSZip from 'jszip';
+import zlib from 'zlib';
 
 async function run() {
   try {
+
+    console.log(process.env);
+
     core.exportVariable('ODASA_TRACER_CONFIGURATION', '');
     delete process.env['ODASA_TRACER_CONFIGURATION'];
 
@@ -25,16 +28,15 @@ async function run() {
     const sarifFolder = path.join(resultsFolder, 'sarif');
     io.mkdirP(sarifFolder);
     
-    const zip = new JSZip();
+    let sarif_data = ' ';
     for (let database of fs.readdirSync(databaseFolder)) {
         const sarifFile = path.join(sarifFolder, database + '.sarif');
         await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database), 
                                     '--format=sarif-latest', '--output=' + sarifFile,
                                     database + '-lgtm.qls']);
-        const sarif_data = fs.readFileSync(sarifFile,'utf8');
-        zip.file(database+'.sarif', sarif_data);
+        sarif_data = fs.readFileSync(sarifFile,'utf8');
     }
-    const zipped_sarif = await zip.generateAsync({type:"base64", compression:"DEFLATE"});
+    const zipped_sarif = zlib.deflateSync(sarif_data).toString('base64');
 
     const { GITHUB_TOKEN, GITHUB_REF } = process.env;
     if (GITHUB_TOKEN && GITHUB_REF) {
@@ -52,8 +54,7 @@ async function run() {
         // as opposed to the first cehck run in the same check suite
         // this run belongs to
 
-
-console.log({
+    console.log({
          ...github.context.repo,
          check_run_id,
          output: {

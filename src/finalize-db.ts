@@ -10,6 +10,9 @@ import JSZip from 'jszip';
 
 async function run() {
   try {
+
+    console.log(process.env);
+
     core.exportVariable('ODASA_TRACER_CONFIGURATION', '');
     delete process.env['ODASA_TRACER_CONFIGURATION'];
 

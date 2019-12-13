@@ -49,8 +49,12 @@ async function run() {
             ref: GITHUB_REF
           });
 
-        const check_run_id = checks.check_runs[0].id;
-        // this works as long as there's only one workflow
+        console.log(checks.check_runs.map(run => run.name))
+
+        const check_name = core.getInput('check_name');
+        const check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id
+        // We're only interested in the check runs created from this action.
+        // This filters out only those check runs that share our check run name
 
         console.log({
          ...github.context.repo,

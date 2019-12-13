@@ -27,11 +27,11 @@ async function run() {
 
     const sarifFolder = path.join(resultsFolder, 'sarif');
     io.mkdirP(sarifFolder);
-    
+
     let sarif_data = ' ';
     for (let database of fs.readdirSync(databaseFolder)) {
         const sarifFile = path.join(sarifFolder, database + '.sarif');
-        await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database), 
+        await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
                                     '--format=sarif-latest', '--output=' + sarifFile,
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
@@ -49,12 +49,17 @@ async function run() {
             ref: GITHUB_REF
           });
 
-        console.log(checks.check_runs.map(run => run.name))
-
         const check_name = core.getInput('check_name');
-        const check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id
-        // We're only interested in the check runs created from this action.
-        // This filters out only those check runs that share our check run name
+
+        let check_run_id;
+        if (check_name) {
+          check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id
+          // We're only interested in the check runs created from this action.
+          // This filters out only those check runs that share our check run name
+        } else {
+          check_run_id = checks.check_runs[0].id
+          // if check_name is not provided, fallback to naively using the latest check run
+        }
 
         console.log({
          ...github.context.repo,

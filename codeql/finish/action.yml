@@ -4,7 +4,6 @@ author: 'GitHub'
 inputs:
   check_name:
     description: The name of the check run to add text to.
-    required: true
 runs:
   using: 'node12'
   main: '../../lib/finalize-db.js'

@@ -1,7 +1,9 @@
 name: 'CodeQL: Finish'
 description: 'Finalize CodeQL database'
 author: 'GitHub'
-inputs: {}
+inputs:
+  check_name:
+    description: The name of the check run to add text to.
 runs:
   using: 'node12'
   main: '../../lib/finalize-db.js'

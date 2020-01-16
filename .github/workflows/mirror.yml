@@ -1,0 +1,37 @@
+# Mirror changes to this repo to Anthophila/codeql-action
+# whenever a PR is merged into master.
+name: "Mirror to Anthophila/codeql-action"
+
+# TODO change to trigger when master branch pushed/PR-merged
+on:
+  label:
+    types: [created, deleted, edited]
+
+jobs:
+  mirror:
+
+    runs-on: ubuntu-latest
+
+    steps:
+#    - uses: actions/checkout@v1
+     - name: Mirror
+       run: |
+         # setup deploy key
+         mkdir -p ~/.ssh
+         echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+         echo "${{ secrets.DEPLOY_KEY_PUB }}" > ~/.ssh/id_rsa.pub
+         chmod 600 ~/.ssh/id_rsa
+         chmod 644 ~/.ssh/id_rsa.pub
+         # ...
+         git clone git@github.com:Anthophila/temp-mirror-testing.git
+         cd temp-mirror-testing
+         git config --global user.email "poop@poop-factory.com" # TODO copy from latest commit?
+         git config --global user.name "Mr Blobby"
+         echo "step 1"
+         echo "more poop" >> blah
+         git add blah
+         echo "step 2"
+         git commit -m "Add blah"  
+         echo "step 3"
+         git push origin master
+         echo "step 4"

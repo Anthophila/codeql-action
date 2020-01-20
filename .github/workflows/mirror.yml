@@ -17,7 +17,7 @@ jobs:
     - name: Mirror
       run: |
         # Only run if running on private repo
-        if [ "${{ github.event.repository.name }}" == "github/codeql-action" ]; then
+        if [ "${{ github.event.repository.full_name }}" == "github/codeql-action" ]; then
           # setup deploy key
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa

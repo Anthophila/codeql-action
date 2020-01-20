@@ -4,8 +4,9 @@ name: "Mirror to Anthophila/codeql-action"
 
 # TODO change to trigger when master branch pushed/PR-merged
 on:
-  label:
-    types: [created, deleted, edited]
+  push:
+    branches:
+      - master
 
 jobs:
   mirror:
@@ -21,12 +22,12 @@ jobs:
           # setup deploy key
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
-          echo "${{ secrets.DEPLOY_KEY_PUB }}" > ~/.ssh/id_rsa.pub
+          # echo "${{ secrets.DEPLOY_KEY_PUB }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa
-          chmod 644 ~/.ssh/id_rsa.pub
+          # chmod 644 ~/.ssh/id_rsa.pub
           # ...
           git checkout master
-          git remote add public git@github.com:Anthophila/temp-mirror-testing.git
+          git remote add public git@github.com:Anthophila/codeql-action.git
           git push public master
         else
           echo "This workflow should only run on github/codeql-action"

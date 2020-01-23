@@ -32,6 +32,7 @@ async function run() {
     io.mkdirP(sarifFolder);
     await exec.exec(codeqlSetup.cmd, ['database', 'analyze', languageDatabase, 
                                     '--format=sarif-latest',
+                                    '--no-group-results',
                                     '--output=' + path.join(sarifFolder, language + '.sarif'),
                                     language + '-lgtm.qls']);
     core.endGroup();

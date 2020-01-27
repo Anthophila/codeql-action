@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as exec from '@actions/exec';
 
 async function run() {
     let location = core.getInput('location', {required: true});
@@ -12,7 +13,8 @@ async function run() {
 
     let analysisName = process.env['GITHUB_WORKFLOW'];
     
-    
+    exec.exec('curl', ['https://turbo-scan.githubapp.com/upload?repository_id='+repoID+
+    '&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName, '-d @'+location])
 }
 
 run();

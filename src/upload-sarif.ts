@@ -15,7 +15,9 @@ async function run() {
     let analysisName = process.env['GITHUB_WORKFLOW'];
     
     exec.exec('curl', ['https://turbo-scan.githubapp.com/upload?repository_id='+repoID+
-    '&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName, '-d @'+location])
+    '&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName, 
+    '-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
+    '-d', '@'+location])
 }
 
 run();

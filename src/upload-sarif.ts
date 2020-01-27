@@ -9,7 +9,8 @@ async function run() {
     let branchName = process.env['GITHUB_REF'];
     // RepoID seems to not be available, using runid as a placeholder
     // Repo name avaliable under GITHUB_REPOSITORY
-    let repoID = process.env['GITHUB_RUN_ID'];
+    //let repoID = process.env['GITHUB_RUN_ID'];
+    let repoID = '236503489'; // Anthophila/amazon-cognito-js-copy
 
     let analysisName = process.env['GITHUB_WORKFLOW'];
     

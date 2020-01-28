@@ -37,6 +37,9 @@ async function run() {
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
+        core.debug('SARIF results for database '+database+ 'created at "'+sarifFile+'"');
+        // TODO this is only exporting the location of the latests analysis
+        core.exportVariable('SARIF_RESULTS', sarifFile);
     }
     const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
 

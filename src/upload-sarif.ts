@@ -2,7 +2,8 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 
 async function run() {
-    let location = core.getInput('location', {required: true});
+    //let location = core.getInput('location', {required: true});
+    let location = process.env['SARIF_RESULTS']
 
     const commitOid = process.env['GITHUB_SHA'];
     // Its in the form of 'refs/heads/master'

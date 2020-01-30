@@ -16,15 +16,29 @@ async function run() {
     //let analysisName = process.env['GITHUB_WORKFLOW'];
     let analysisName = 'CodeQL';
     
-    exec.exec('curl', ['https://turbo-scan.githubapp.com/upload?repository_id='+repoID+
-    '&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName, '-v',
-    '-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
-    '-d', '@'+location]).then(returnCode => {
-        if (returnCode !== 0) {
-            core.error('Curl command failed with return code: '+returnCode);
-            core.setFailed('Curl command failed with return code: '+returnCode);
-        }
-    })
+    // This will execute the request while logging the body and keeping the http status in $CODEQL_UPLOAD_STATUS
+    core.exportVariable('CODEQL_UPLOAD_STATUS', 
+    '$(curl --output /dev/stderr --write-out "%{http_code}" -v '
+    +'https://turbo-scan.githubapp.com/upload?repository_id='+repoID+'&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName
+    +'-H Authorization: Bearer '+process.env['GITHUB_TOKEN']
+    +'-d @'+location
+    +')')
+    let returnCode = process.env['CODEQL_UPLOAD_STATUS']
+    if (returnCode !== '200') {
+        core.error('Curl command failed with return code: '+returnCode);
+        core.setFailed('Curl command failed with return code: '+returnCode);
+    }
+
+
+    // exec.exec('curl', ['https://turbo-scan.githubapp.com/upload?repository_id='+repoID+
+    // '&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName, '-v',
+    // '-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
+    // '-d', '@'+location]).then(returnCode => {
+    //     if (returnCode !== 0) {
+    //         core.error('Curl command failed with return code: '+returnCode);
+    //         core.setFailed('Curl command failed with return code: '+returnCode);
+    //     }
+    // })
 }
 
 run();

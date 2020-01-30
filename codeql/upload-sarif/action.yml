@@ -2,8 +2,8 @@ name: 'CodeQL: Upload SARIF'
 description: 'Upload the analysis results'
 author: 'GitHub'
 inputs:
-  location:
-    description: The SARIF file to be submited
+  sarif_folder:
+    description: The folder that contains the SARIF files to be uploaded
     required: true
 runs:
   using: 'node12'

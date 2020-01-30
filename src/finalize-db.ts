@@ -25,7 +25,7 @@ async function run() {
         await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, tracedLanguage)]);
     }
 
-    const sarifFolder = path.join(resultsFolder, 'sarif');
+    const sarifFolder = core.getInput('results_folder');
     io.mkdirP(sarifFolder);
 
     let sarif_data = ' ';
@@ -38,8 +38,6 @@ async function run() {
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
         core.debug('SARIF results for database '+database+ 'created at "'+sarifFile+'"');
-        // TODO this is only exporting the location of the latests analysis
-        core.exportVariable('SARIF_RESULTS', sarifFile);
     }
     const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
 

@@ -10,7 +10,11 @@ async function run() {
     const commitOid = process.env['GITHUB_SHA'];
 
     // Its in the form of 'refs/heads/master'
+    let prefix = 'refs/heads/'
     let branchName = process.env['GITHUB_REF'];
+    if (branchName?.substr(0, prefix.length) === prefix) {
+        branchName = branchName.substr(prefix.length);
+    }
 
     // Get repoID
     await exec.exec('curl', ['-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],

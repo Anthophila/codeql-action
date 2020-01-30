@@ -8,12 +8,18 @@ async function run() {
     let sarifFolder = core.getInput('sarif_folder', {required: true});
 
     const commitOid = process.env['GITHUB_SHA'];
+
     // Its in the form of 'refs/heads/master'
     let branchName = process.env['GITHUB_REF'];
-    // RepoID seems to not be available, using runid as a placeholder
-    // Repo name avaliable under GITHUB_REPOSITORY
-    //let repoID = process.env['GITHUB_RUN_ID'];
-    let repoID = '236503489'; // Anthophila/amazon-cognito-js-copy
+
+    // Get repoID
+    await exec.exec('curl', ['-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
+        'https://api.github.com/repos/'+process.env['GITHUB_REPOSITORY'],
+        '-o', '/tmp/getRepo']
+    );
+    let raw = fs.readFileSync('/tmp/getRepo').toString();
+    let repoInfo = JSON.parse(raw);
+    let repoID = repoInfo['id'];
 
     //let analysisName = process.env['GITHUB_WORKFLOW'];
     let analysisName = 'CodeQL';
@@ -25,7 +31,7 @@ async function run() {
             '-d', '@'+path.join(sarifFolder, sarifFile)]
         ).catch(reason => {
             core.setFailed('Curl command failed: '+reason);
-        })
+        });
     }
 }
 

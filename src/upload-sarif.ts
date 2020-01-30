@@ -20,10 +20,8 @@ async function run() {
     exec.exec('curl', ['-f', 'https://turbo-scan.githubapp.com/upload?repository_id='+repoID+
     '&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName, '-v',
     '-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
-    '-d', '@'+location]).then(returnCode => {
-        if (returnCode !== 0) {
-            core.setFailed('Curl command failed with return code: '+returnCode);
-        }
+    '-d', '@'+location]).catch(reason => {
+        core.setFailed('Curl command failed: '+reason);
     })
 }
 

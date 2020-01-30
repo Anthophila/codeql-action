@@ -8,10 +8,18 @@ async function run() {
     let sarifFolder = core.getInput('sarif_folder', {required: true});
 
     const commitOid = process.env['GITHUB_SHA'];
+    if (commitOid == null) {
+        core.setFailed('GITHUB_SHA environment variable must be set');
+        return;
+    }
 
     // Its in the form of 'refs/heads/master'
     let prefix = 'refs/heads/'
     let branchName = process.env['GITHUB_REF'];
+    if (branchName == null) {
+        core.setFailed('GITHUB_REF environment variable must be set');
+        return;
+    }
     if (branchName?.substr(0, prefix.length) === prefix) {
         branchName = branchName.substr(prefix.length);
     }
@@ -25,12 +33,18 @@ async function run() {
     let repoInfo = JSON.parse(raw);
     let repoID = repoInfo['id'];
 
-    //let analysisName = process.env['GITHUB_WORKFLOW'];
-    let analysisName = 'CodeQL';
+    let analysisName = process.env['GITHUB_WORKFLOW'];
+    if (analysisName == null) {
+        core.setFailed('GITHUB_WORKFLOW environment variable must be set');
+        return;
+    }
 
     for (let sarifFile of fs.readdirSync(sarifFolder)) {
-        exec.exec('curl', ['-f', 'https://turbo-scan.githubapp.com/upload?repository_id='+repoID+
-            '&commit_oid='+commitOid+'&branch_name='+branchName+'&analysis_name='+analysisName, '-v',
+        exec.exec('curl', ['-f', 
+            'https://turbo-scan.githubapp.com/upload?repository_id='+encodeURIComponent(repoID)+
+            '&commit_oid='+encodeURIComponent(commitOid)+'&branch_name='+encodeURIComponent(branchName)+
+            '&analysis_name='+encodeURIComponent(analysisName),
+            '-v',
             '-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
             '-d', '@'+path.join(sarifFolder, sarifFile)]
         ).catch(reason => {

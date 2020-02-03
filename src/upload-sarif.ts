@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 async function run() {
-    let sarifFolder = core.getInput('sarif_folder', {required: true});
+    let sarifFolder = core.getInput('sarif_folder', { required: true });
 
     const commitOid = process.env['GITHUB_SHA'];
     if (commitOid == null) {
@@ -24,15 +24,6 @@ async function run() {
         branchName = branchName.substr(prefix.length);
     }
 
-    // Get repoID
-    await exec.exec('curl', ['-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
-        'https://api.github.com/repos/'+process.env['GITHUB_REPOSITORY'],
-        '-o', '/tmp/getRepo']
-    );
-    let raw = fs.readFileSync('/tmp/getRepo').toString();
-    let repoInfo = JSON.parse(raw);
-    let repoID = repoInfo['id'];
-
     let analysisName = process.env['GITHUB_WORKFLOW'];
     if (analysisName == null) {
         core.setFailed('GITHUB_WORKFLOW environment variable must be set');
@@ -40,15 +31,14 @@ async function run() {
     }
 
     for (let sarifFile of fs.readdirSync(sarifFolder)) {
-        exec.exec('curl', ['-f', 
-            'https://turbo-scan.githubapp.com/upload?repository_id='+encodeURIComponent(repoID)+
-            '&commit_oid='+encodeURIComponent(commitOid)+'&branch_name='+encodeURIComponent(branchName)+
-            '&analysis_name='+encodeURIComponent(analysisName),
+        let payload = JSON.stringify({ "commit_oid": commitOid, "branch_name": branchName, "analysis_name": analysisName, "sarif": fs.readFileSync(path.join(sarifFolder, sarifFile)).toString() });
+        exec.exec('curl', ['-f',
+            'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis',
             '-v',
-            '-H', 'Authorization: Bearer '+process.env['GITHUB_TOKEN'],
-            '-d', '@'+path.join(sarifFolder, sarifFile)]
+            '-H', 'Authorization: Bearer ' + process.env['GITHUB_TOKEN'],
+            '-d', payload]
         ).catch(reason => {
-            core.setFailed('Curl command failed: '+reason);
+            core.setFailed('Curl command failed: ' + reason);
         });
     }
 }

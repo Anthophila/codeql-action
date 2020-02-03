@@ -40,14 +40,12 @@ async function run() {
 
     for (let sarifFile of fs.readdirSync(sarifFolder)) {
         let payload = JSON.stringify({ "commit_oid": commitOid, "branch_name": branchName, "analysis_name": analysisName, "sarif": fs.readFileSync(path.join(sarifFolder, sarifFile)).toString() });
-        core.debug(payload);
         let ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
         let client = new http.HttpClient('CodeQL Action', [ph]);
         let res: http.HttpClientResponse = await client.put('https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis', payload);
-        let statusCode = res.message.statusCode?.toString() || "-1";
-        core.debug(statusCode);
-        let body: string = await res.readBody();
-        core.debug(body);
+        if (res.message.statusCode != 202) {
+            core.setFailed('Upload failed' + await res.readBody());
+        }
     }
 }
 

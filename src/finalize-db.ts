@@ -55,11 +55,11 @@ async function run() {
 
         let check_run_id;
         if (check_name) {
-          check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id
+          check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id;
           // We're only interested in the check runs created from this action.
           // This filters out only those check runs that share our check run name
         } else {
-          check_run_id = checks.check_runs[0].id
+          check_run_id = checks.check_runs[0].id;
           // if check_name is not provided, fallback to naively using the latest check run
         }
 

@@ -14,7 +14,7 @@ async function run() {
     }
 
     // Its in the form of 'refs/heads/master'
-    let prefix = 'refs/heads/'
+    let prefix = 'refs/heads/';
     let branchName = process.env['GITHUB_REF'];
     if (branchName == null) {
         core.setFailed('GITHUB_REF environment variable must be set');

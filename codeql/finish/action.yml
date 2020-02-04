@@ -5,7 +5,7 @@ inputs:
   check_name:
     description: The name of the check run to add text to.
   results_folder:
-    description: The path of the folder where to save the SARIF results
+    description: The path of the folder in which to save the SARIF results
     required: true
 runs:
   using: 'node12'

@@ -1,4 +1,4 @@
-name: 'CodeQL: Upload SARIF'
+name: 'Code Scanning : Upload SARIF'
 description: 'Upload the analysis results'
 author: 'GitHub'
 inputs:

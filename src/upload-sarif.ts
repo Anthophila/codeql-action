@@ -16,6 +16,7 @@ async function run() {
             core.setFailed('GITHUB_SHA environment variable must be set');
             return;
         }
+        core.debug('commitOid: '+commitOid);
     
         // Its in the form of 'refs/heads/master'
         let prefix = 'refs/heads/';
@@ -27,12 +28,14 @@ async function run() {
         if (branchName.substr(0, prefix.length) === prefix) {
             branchName = branchName.substr(prefix.length);
         }
+        core.debug('branchName: '+branchName);
 
         const analysisName = process.env['GITHUB_WORKFLOW'];
         if (analysisName == null) {
             core.setFailed('GITHUB_WORKFLOW environment variable must be set');
             return;
         }
+        core.debug('analysisName: '+analysisName);
     
         const githubToken = process.env['GITHUB_TOKEN'];
         if (githubToken == null) {
@@ -42,6 +45,7 @@ async function run() {
     
         for (let sarifFile of fs.readdirSync(sarifFolder)) {
             const payload = JSON.stringify({ "commit_oid": commitOid, "branch_name": branchName, "analysis_name": analysisName, "sarif": fs.readFileSync(path.join(sarifFolder, sarifFile)).toString() });
+            core.debug(payload);
             const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
             const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
             const res: http.HttpClientResponse = await client.put('https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis', payload);

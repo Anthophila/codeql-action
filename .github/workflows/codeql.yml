@@ -13,8 +13,10 @@ jobs:
       with: 
         language: javascript
     - uses: ./codeql/finish
-    - uses: actions/upload-artifact@master
       with:
-        name: results
-        path: ../codeql_results/sarif
-
+        results_folder: ./sarif
+    - uses: ./codeql/upload-sarif
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        sarif_folder: ./sarif

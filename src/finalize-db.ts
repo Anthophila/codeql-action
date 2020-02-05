@@ -25,7 +25,7 @@ async function run() {
         await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, tracedLanguage)]);
     }
 
-    const sarifFolder = path.join(resultsFolder, 'sarif');
+    const sarifFolder = core.getInput('results_folder');
     io.mkdirP(sarifFolder);
 
     let sarif_data = ' ';
@@ -37,6 +37,7 @@ async function run() {
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
+        core.debug('SARIF results for database '+database+ ' created at "'+sarifFile+'"');
     }
     const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
 
@@ -54,11 +55,11 @@ async function run() {
 
         let check_run_id;
         if (check_name) {
-          check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id
+          check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id;
           // We're only interested in the check runs created from this action.
           // This filters out only those check runs that share our check run name
         } else {
-          check_run_id = checks.check_runs[0].id
+          check_run_id = checks.check_runs[0].id;
           // if check_name is not provided, fallback to naively using the latest check run
         }
 

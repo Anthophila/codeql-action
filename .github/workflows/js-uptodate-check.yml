@@ -1,4 +1,4 @@
-name: "CodeQL action"
+name: "Check generated JavaScript"
 
 on: [pull_request, push] # TODO remove push
 

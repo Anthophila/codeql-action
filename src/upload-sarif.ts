@@ -19,14 +19,10 @@ async function run() {
         core.debug('commitOid: ' + commitOid);
 
         // Its in the form of 'refs/heads/master'
-        let prefix = 'refs/heads/';
-        let branchName = process.env['GITHUB_REF'];
+        const branchName = process.env['GITHUB_REF'];
         if (branchName == null) {
             core.setFailed('GITHUB_REF environment variable must be set');
             return;
-        }
-        if (branchName.substr(0, prefix.length) === prefix) {
-            branchName = branchName.substr(prefix.length);
         }
         core.debug('branchName: ' + branchName);
 

@@ -31,6 +31,11 @@ async function run() {
     io.mkdirP(sarifFolder);
 
     let sarif_data = ' ';
+    let combinedSarif = {
+      version: null,
+      runs: []
+    }
+
     for (let database of fs.readdirSync(databaseFolder)) {
         const sarifFile = path.join(sarifFolder, database + '.sarif');
         await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
@@ -38,8 +43,29 @@ async function run() {
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
+        let sarifObject = JSON.parse(sarif_data);
+
+        if (combinedSarif.version === null) {
+          combinedSarif.version = sarifObject["version"];
+          core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version))
+        } else if (combinedSarif.version !== sarifObject["version"]){
+          throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + sarifObject["version"];
+        }
+        combinedSarif.runs = combinedSarif.runs.concat(sarifObject['runs']);
+        core.debug("Runs added to the list: " + JSON.stringify(sarifObject['runs']))
+
         core.debug('SARIF results for database '+database+ ' created at "'+sarifFile+'"');
     }
+
+    core.debug('Combined SARIF file: ');
+    core.debug(JSON.stringify(combinedSarif));
+
+    let combinedSarifFolder = path.join(sarifFolder, 'combined');
+    io.mkdirP(combinedSarifFolder);
+    let combinedSarifFile = path.join(sarifFolder, 'combined/combined.sarif');
+    fs.writeFileSync(combinedSarifFile, JSON.stringify(combinedSarif));
+    core.debug('Combined SARIF file saved to : ' + combinedSarifFile);
+
     const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
 
     const { GITHUB_TOKEN, GITHUB_REF } = process.env;

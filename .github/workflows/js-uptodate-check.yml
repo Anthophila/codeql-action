@@ -1,6 +1,6 @@
 name: "Check generated JavaScript"
 
-on: [pull_request, push] # TODO remove push
+on: [pull_request]
 
 jobs:
   build:

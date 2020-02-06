@@ -52,6 +52,53 @@ async function tracerConfig(codeql: setuptools.CodeQLSetup, database: string, co
     return info;
 }
 
+function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerConfig {
+    // A tracer config is a map containing additional environment variables and a tracer 'spec' file.
+    // A tracer 'spec' file has the following format [log_file, number_of_blocks, blocks_text]
+
+    // Merge the environments
+    const env = {};
+    for (let v of Object.values(configs)) {
+        for(let e of Object.entries(v.env)) {
+            const name = e[0];
+            const value = e[1];
+            if (name in env && env[name] !== value) {
+                core.debug('Incompatible values for environment parameter ' + name + ' ' + env[name] + ' and ' + value)
+                // TODO: throw Error('Incompatible values in environment') // TODO reuse error message
+            }
+            env[name] = value;
+        }
+    }
+
+    // Concatenate spec files into a new spec file
+    let languages = Object.keys(configs);
+    const cppIndex = languages.indexOf('cpp');
+    // Make sure cpp is the last language, if it's present since it must be concatenated last
+    if (cppIndex !== -1) {
+        let lastLang = languages[languages.length - 1];
+        languages[languages.length -1] = languages[cppIndex];
+        languages[cppIndex] = lastLang;
+    }
+
+    let totalLines: string[] = [];
+    let totalCount = 0;
+    for (let lang of languages) {
+        const lines = fs.readFileSync(configs[lang].spec, 'utf8').split(/\r?\n/);
+        const count = parseInt(lines[1], 10);
+        totalCount += count;
+        totalLines.push(...lines.slice(2));
+    }
+
+    const newLogFilePath = '/tmp/compound-build-tracer.log';
+    const spec = '/tmp/compound-spec';
+    const newSpecContent = [ newLogFilePath, totalCount.toString(10), ...totalLines ];
+
+    fs.writeFileSync(spec, newSpecContent.join('\n'));
+    // TODO write env to an environment file?
+
+    return { env, spec };
+} 
+
 async function run() {
   try {
     let languages = core.getInput('language', { required: true }).split(',');
@@ -71,8 +118,10 @@ async function run() {
 
     let tracedLanguages : {[key: string]: TracerConfig} = {};
 
+    // TODO: replace this code once CodeQL supports multi-language tracing
     for (let language of languages) {
         const languageDatabase = path.join(databaseFolder, language);
+        // TODO: add better detection of 'traced languages' instead of using a hard coded list
         if (['cpp', 'java', 'csharp'].includes(language)) {
             await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot ]);
             const config : TracerConfig = await tracerConfig(codeqlSetup, languageDatabase);
@@ -85,10 +134,8 @@ async function run() {
 
     const tracedLanguageKeys = Object.keys(tracedLanguages);
     if (tracedLanguageKeys.length > 1) {
-        throw new Error('Analysis of multiple compiled languages not supported: ' + languages.join(', '));
-    } else if (tracedLanguageKeys.length == 1) {
-        core.exportVariable('CODEQL_ACTION_TRACED_LANGUAGE', tracedLanguageKeys[0]);
-        const mainTracerConfig = tracedLanguages[tracedLanguageKeys[0]];
+        core.exportVariable('CODEQL_ACTION_TRACED_LANGUAGES', tracedLanguageKeys.join(','));
+        const mainTracerConfig = concatTracerConfigs(tracedLanguages);
         if (mainTracerConfig.spec) { 
             for (let entry of Object.entries(mainTracerConfig.env)) {
                core.exportVariable(entry[0], entry[1]);
@@ -107,7 +154,6 @@ async function run() {
             }
         } 
     }
-
 
     // TODO: make this a "private" environment variable of the action
     core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);

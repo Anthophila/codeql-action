@@ -33,7 +33,6 @@ async function run() {
         const sarifFile = path.join(sarifFolder, database + '.sarif');
         await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
                                     '--format=sarif-latest', '--output=' + sarifFile,
-                                    '--no-group-results',
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');

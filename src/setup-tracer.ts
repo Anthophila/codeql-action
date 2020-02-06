@@ -133,7 +133,7 @@ async function run() {
     }
 
     const tracedLanguageKeys = Object.keys(tracedLanguages);
-    if (tracedLanguageKeys.length > 1) {
+    if (tracedLanguageKeys.length > 0) {
         core.exportVariable('CODEQL_ACTION_TRACED_LANGUAGES', tracedLanguageKeys.join(','));
         const mainTracerConfig = concatTracerConfigs(tracedLanguages);
         if (mainTracerConfig.spec) { 

@@ -3,8 +3,7 @@ name: "Check generated JavaScript"
 on: [pull_request]
 
 jobs:
-  build:
-
+  check-js:
     runs-on: ubuntu-latest
 
     steps:

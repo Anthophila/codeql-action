@@ -58,14 +58,20 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
 
     // Merge the environments
     const env = {};
+    var envSize = 0;
     for (let v of Object.values(configs)) {
         for(let e of Object.entries(v.env)) {
             const name = e[0];
             const value = e[1];
-            if (name in env && env[name] !== value) {
-                throw Error('Incompatible values in environment parameter ' + name + ' ' + env[name] + ' and ' + value)
+            if (name in env) {
+                if (env[name] !== value) {
+                    throw Error('Incompatible values in environment parameter ' + name + ' ' + env[name] + ' and ' + value)
+                }
             }
-            env[name] = value;
+            else {
+                env[name] = value;
+                envSize += 1;
+            }
         }
     }
 
@@ -93,10 +99,25 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
     const newSpecContent = [ newLogFilePath, totalCount.toString(10), ...totalLines ];
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
-    // TODO write env to an environment file?
+
+    // Write the compound environment
+    const envPath = spec + '.environment';
+    appendInt32BE(envPath, envSize);
+    for(let e of Object.entries(env)) {
+        const key = e[0];
+        const value = String(e[1]);
+        appendInt32BE(envPath, key.length + value.length + 2);
+        fs.appendFileSync(envPath, key + '=' + value + '\0');
+    }
 
     return { env, spec };
-} 
+}
+
+function appendInt32BE(path, value) {
+    var b = Buffer.alloc(4);
+    b.writeInt32BE(value, 0);
+    fs.appendFileSync(path, b);
+}
 
 function workspaceFolder() : string {
     let workspaceFolder = process.env['RUNNER_WORKSPACE'];

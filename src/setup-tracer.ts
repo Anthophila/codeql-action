@@ -88,8 +88,8 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
         totalLines.push(...lines.slice(2));
     }
 
-    const newLogFilePath = '/tmp/compound-build-tracer.log';
-    const spec = '/tmp/compound-spec';
+    const newLogFilePath = path.resolve(workspaceFolder(), 'compound-build-tracer.log');
+    const spec = path.resolve(workspaceFolder(), 'compound-spec');
     const newSpecContent = [ newLogFilePath, totalCount.toString(10), ...totalLines ];
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
@@ -97,6 +97,14 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
 
     return { env, spec };
 } 
+
+function workspaceFolder() : string {
+    let workspaceFolder = process.env['RUNNER_WORKSPACE'];
+    if (! workspaceFolder)
+      workspaceFolder = path.resolve('..');
+
+    return workspaceFolder;
+}
 
 async function run() {
   try {
@@ -109,10 +117,7 @@ async function run() {
     const codeqlSetup = await setuptools.setupCodeQL();
     core.endGroup();
    
-    let workspaceFolder = process.env['RUNNER_WORKSPACE'];
-    if (! workspaceFolder)
-      workspaceFolder = path.resolve('..');
-    const codeqlResultFolder = path.resolve(workspaceFolder, 'codeql_results');
+    const codeqlResultFolder = path.resolve(workspaceFolder(), 'codeql_results');
     const databaseFolder = path.resolve(codeqlResultFolder, 'db');
 
     let tracedLanguages : {[key: string]: TracerConfig} = {};

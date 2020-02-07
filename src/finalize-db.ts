@@ -18,11 +18,13 @@ async function run() {
 
     const codeqlCmd = process.env['CODEQL_ACTION_CMD'] || 'CODEQL_ACTION_CMD';
     const resultsFolder = process.env['CODEQL_ACTION_RESULTS'] || 'CODEQL_ACTION_RESULTS';
-    const tracedLanguage = process.env['CODEQL_ACTION_TRACED_LANGUAGE'];
+    const tracedLanguages = process.env['CODEQL_ACTION_TRACED_LANGUAGES'];
     const databaseFolder = path.join(resultsFolder, 'db');
 
-    if (tracedLanguage) {
-        await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, tracedLanguage)]);
+    if (tracedLanguages) {
+        for (const language of tracedLanguages.split(',')) {
+            await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
+        }
     }
 
     const sarifFolder = core.getInput('results_folder');

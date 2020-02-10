@@ -57,15 +57,21 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
     // A tracer 'spec' file has the following format [log_file, number_of_blocks, blocks_text]
 
     // Merge the environments
-    const env = {};
+    const env : { [key:string]:string; } = {};
+    var envSize = 0;
     for (let v of Object.values(configs)) {
         for(let e of Object.entries(v.env)) {
             const name = e[0];
             const value = e[1];
-            if (name in env && env[name] !== value) {
-                throw Error('Incompatible values in environment parameter ' + name + ' ' + env[name] + ' and ' + value)
+            if (name in env) {
+                if (env[name] !== value) {
+                    throw Error('Incompatible values in environment parameter ' + name + ' ' + env[name] + ' and ' + value)
+                }
             }
-            env[name] = value;
+            else {
+                env[name] = value;
+                envSize += 1;
+            }
         }
     }
 
@@ -93,10 +99,25 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
     const newSpecContent = [ newLogFilePath, totalCount.toString(10), ...totalLines ];
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
-    // TODO write env to an environment file?
+
+    // Prepare the content of the compound environment file
+    var buffer = Buffer.alloc(4);
+    buffer.writeInt32LE(envSize, 0);
+    for(let e of Object.entries(env)) {
+        const key = e[0];
+        const value = e[1];
+        const lineBuffer = new Buffer(key + '=' + value + '\0', 'utf8');
+        const sizeBuffer = Buffer.alloc(4);
+        sizeBuffer.writeInt32LE(lineBuffer.length, 0);
+        buffer = Buffer.concat([buffer, sizeBuffer, lineBuffer]);
+    }
+    // Write the compound environment
+    const envPath = spec + '.environment';
+    core.debug('Writing compound env to ' + envPath); // TODO remove
+    fs.writeFileSync(envPath, buffer);
 
     return { env, spec };
-} 
+}
 
 function workspaceFolder() : string {
     let workspaceFolder = process.env['RUNNER_WORKSPACE'];

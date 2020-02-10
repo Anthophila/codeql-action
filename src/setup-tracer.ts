@@ -102,13 +102,13 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
 
     // Prepare the content of the compound environment file
     var buffer = Buffer.alloc(4);
-    buffer.writeInt32BE(envSize, 0);
+    buffer.writeInt32LE(envSize, 0);
     for(let e of Object.entries(env)) {
         const key = e[0];
         const value = e[1];
         const lineBuffer = new Buffer(key + '=' + value + '\0', 'utf8');
         const sizeBuffer = Buffer.alloc(4);
-        sizeBuffer.writeInt32BE(lineBuffer.length, 0);
+        sizeBuffer.writeInt32LE(lineBuffer.length, 0);
         buffer = Buffer.concat([buffer, sizeBuffer, lineBuffer]);
     }
     // Write the compound environment

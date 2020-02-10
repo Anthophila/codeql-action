@@ -65,7 +65,7 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
             const value = e[1];
             if (name in env) {
                 if (env[name] !== value) {
-                    throw Error('Incompatible values in environment parameter ' + name + ' ' + env[name] + ' and ' + value)
+                    throw Error('Incompatible values in environment parameter ' + name + ': ' + env[name] + ' and ' + value)
                 }
             }
             else {
@@ -113,7 +113,6 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
     }
     // Write the compound environment
     const envPath = spec + '.environment';
-    core.debug('Writing compound env to ' + envPath); // TODO remove
     fs.writeFileSync(envPath, buffer);
 
     return { env, spec };

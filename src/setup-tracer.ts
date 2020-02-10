@@ -57,7 +57,7 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
     // A tracer 'spec' file has the following format [log_file, number_of_blocks, blocks_text]
 
     // Merge the environments
-    const env = {};
+    const env : { [key:string]:string; } = {};
     var envSize = 0;
     for (let v of Object.values(configs)) {
         for(let e of Object.entries(v.env)) {
@@ -100,23 +100,23 @@ function concatTracerConfigs(configs: {[lang: string]: TracerConfig}) : TracerCo
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
 
-    // Write the compound environment
-    const envPath = spec + '.environment';
-    appendInt32BE(envPath, envSize);
+    // Prepare the content of the compound environment file
+    var buffer = Buffer.alloc(4);
+    buffer.writeInt32BE(envSize, 0);
     for(let e of Object.entries(env)) {
         const key = e[0];
-        const value = String(e[1]);
-        appendInt32BE(envPath, key.length + value.length + 2);
-        fs.appendFileSync(envPath, key + '=' + value + '\0');
+        const value = e[1];
+        const lineBuffer = new Buffer(key + '=' + value + '\0', 'utf8');
+        const sizeBuffer = Buffer.alloc(4);
+        sizeBuffer.writeInt32BE(lineBuffer.length, 0);
+        buffer = Buffer.concat([buffer, sizeBuffer, lineBuffer]);
     }
+    // Write the compound environment
+    const envPath = spec + '.environment';
+    core.debug('Writing compound env to ' + envPath); // TODO remove
+    fs.writeFileSync(envPath, buffer);
 
     return { env, spec };
-}
-
-function appendInt32BE(path, value) {
-    var b = Buffer.alloc(4);
-    b.writeInt32BE(value, 0);
-    fs.appendFileSync(path, b);
 }
 
 function workspaceFolder() : string {

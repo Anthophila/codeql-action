@@ -8,21 +8,21 @@ import * as fs from 'fs';
 
 import zlib from 'zlib';
 
-class SARIFFile {
-  version: string = "";
-  runs: any[] = [];
+interface SARIFFile {
+  version: string | null;
+  runs: any[];
 }
 
 function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
   // Check SARIF version
   if (combinedSarif.version === null) {
-    combinedSarif.version = newSarifRuns["version"];
+    combinedSarif.version = newSarifRuns.version;
     core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version))
-  } else if (combinedSarif.version !== newSarifRuns["version"]){
-    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns["version"];
+  } else if (combinedSarif.version !== newSarifRuns.version){
+    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
   }
 
-  combinedSarif.runs = combinedSarif.runs.concat(newSarifRuns['runs']);
+  combinedSarif.runs.push(...newSarifRuns.runs);
 }
 
 async function run() {
@@ -45,7 +45,7 @@ async function run() {
     }
 
     let sarif_data = ' ';
-    let combinedSarif = {
+    let combinedSarif: SARIFFile = {
       version: null,
       runs: []
     }
@@ -62,7 +62,7 @@ async function run() {
         sarif_data = fs.readFileSync(sarifFile,'utf8');
 
         let sarifObject = JSON.parse(sarif_data);
-        combinedSarif.runs = combinedSarif.runs.concat(sarifObject['runs']);
+        appendSarifRuns(combinedSarif, sarifObject);
 
         core.debug('SARIF results for database '+database+ ' created at "'+sarifFile+'"');
     }

@@ -8,6 +8,23 @@ import * as fs from 'fs';
 
 import zlib from 'zlib';
 
+class SARIFFile {
+  version: string = "";
+  runs: any[] = [];
+}
+
+function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
+  // Check SARIF version
+  if (combinedSarif.version === null) {
+    combinedSarif.version = newSarifRuns["version"];
+    core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version))
+  } else if (combinedSarif.version !== newSarifRuns["version"]){
+    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns["version"];
+  }
+
+  combinedSarif.runs = combinedSarif.runs.concat(newSarifRuns['runs']);
+}
+
 async function run() {
   try {
 
@@ -27,14 +44,14 @@ async function run() {
         }
     }
 
-    const sarifFolder = core.getInput('results_folder');
-    io.mkdirP(sarifFolder);
-
     let sarif_data = ' ';
     let combinedSarif = {
       version: null,
       runs: []
     }
+
+    const sarifFolder = path.join(resultsFolder, 'sarif');
+    io.mkdirP(sarifFolder);
 
     for (let database of fs.readdirSync(databaseFolder)) {
         const sarifFile = path.join(sarifFolder, database + '.sarif');
@@ -43,16 +60,9 @@ async function run() {
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
-        let sarifObject = JSON.parse(sarif_data);
 
-        if (combinedSarif.version === null) {
-          combinedSarif.version = sarifObject["version"];
-          core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version))
-        } else if (combinedSarif.version !== sarifObject["version"]){
-          throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + sarifObject["version"];
-        }
+        let sarifObject = JSON.parse(sarif_data);
         combinedSarif.runs = combinedSarif.runs.concat(sarifObject['runs']);
-        core.debug("Runs added to the list: " + JSON.stringify(sarifObject['runs']))
 
         core.debug('SARIF results for database '+database+ ' created at "'+sarifFile+'"');
     }
@@ -60,11 +70,11 @@ async function run() {
     core.debug('Combined SARIF file: ');
     core.debug(JSON.stringify(combinedSarif));
 
-    let combinedSarifFolder = path.join(sarifFolder, 'combined');
-    io.mkdirP(combinedSarifFolder);
-    let combinedSarifFile = path.join(sarifFolder, 'combined/combined.sarif');
-    fs.writeFileSync(combinedSarifFile, JSON.stringify(combinedSarif));
-    core.debug('Combined SARIF file saved to : ' + combinedSarifFile);
+    const outputFile = core.getInput('output_file');
+    io.mkdirP(path.dirname(outputFile));
+
+    fs.writeFileSync(outputFile, JSON.stringify(combinedSarif));
+    core.debug('Combined SARIF file stored to : ' + outputFile);
 
     const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
 

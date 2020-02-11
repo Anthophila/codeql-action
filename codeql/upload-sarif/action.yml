@@ -2,9 +2,10 @@ name: 'Code Scanning : Upload SARIF'
 description: 'Upload the analysis results'
 author: 'GitHub'
 inputs:
-  sarif_folder:
-    description: The folder that contains the SARIF files to be uploaded
-    required: true
+  sarif_file:
+    description: The SARIF file to be uploaded
+    required: false
+    default: '../results.sarif'
 runs:
   using: 'node12'
   main: '../../lib/upload-sarif.js'

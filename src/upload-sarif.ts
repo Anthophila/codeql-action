@@ -9,8 +9,6 @@ import * as path from 'path';
 async function run() {
 
     try {
-        const sarifFolder = core.getInput('sarif_folder', { required: true });
-
         const commitOid = process.env['GITHUB_SHA'];
         if (commitOid == null) {
             core.setFailed('GITHUB_SHA environment variable must be set');
@@ -39,17 +37,27 @@ async function run() {
             return;
         }
 
-        for (let sarifFile of fs.readdirSync(sarifFolder)) {
-            const payload = JSON.stringify({ "commit_oid": commitOid, "branch_name": branchName, "ref": branchName, "analysis_name": analysisName, "sarif": fs.readFileSync(path.join(sarifFolder, sarifFile)).toString() });
-            core.debug(payload);
-            const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
-            const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
-            const res: http.HttpClientResponse = await client.put('https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis', payload);
-            core.debug('response status: ' + res.message.statusCode);
-            if (res.message.statusCode != 202) {
-                core.setFailed('Upload failed' + await res.readBody());
-            }
+        const sarifFile = core.getInput('sarif_file');
+
+        const payload = JSON.stringify({
+            "commit_oid": commitOid,
+            "branch_name": branchName,
+            "ref": branchName,
+            "analysis_name": analysisName,
+            "sarif": fs.readFileSync(sarifFile).toString()
+        });
+        core.debug(payload);
+
+        const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
+        const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
+        const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis';
+        const res: http.HttpClientResponse = await client.put(url, payload);
+        
+        core.debug('response status: ' + res.message.statusCode);
+        if (res.message.statusCode != 202) {
+            core.setFailed('Upload failed' + await res.readBody());
         }
+
     } catch (error) {
         core.setFailed(error.message);
     }

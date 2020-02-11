@@ -40,7 +40,7 @@ async function run() {
         }
 
         for (let sarifFile of fs.readdirSync(sarifFolder)) {
-            const payload = JSON.stringify({ "commit_oid": commitOid, "branch_name": branchName, "analysis_name": analysisName, "sarif": fs.readFileSync(path.join(sarifFolder, sarifFile)).toString() });
+            const payload = JSON.stringify({ "commit_oid": commitOid, "branch_name": branchName, "ref": branchName, "analysis_name": analysisName, "sarif": fs.readFileSync(path.join(sarifFolder, sarifFile)).toString() });
             core.debug(payload);
             const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
             const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);

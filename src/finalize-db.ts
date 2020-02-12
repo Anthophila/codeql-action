@@ -8,6 +8,23 @@ import * as fs from 'fs';
 
 import zlib from 'zlib';
 
+interface SARIFFile {
+  version: string | null;
+  runs: any[];
+}
+
+function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
+  // Check SARIF version
+  if (combinedSarif.version === null) {
+    combinedSarif.version = newSarifRuns.version;
+    core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version))
+  } else if (combinedSarif.version !== newSarifRuns.version){
+    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
+  }
+
+  combinedSarif.runs.push(...newSarifRuns.runs);
+}
+
 async function run() {
   try {
 
@@ -27,10 +44,15 @@ async function run() {
         }
     }
 
-    const sarifFolder = core.getInput('results_folder');
+    let sarif_data = ' ';
+    let combinedSarif: SARIFFile = {
+      version: null,
+      runs: []
+    }
+
+    const sarifFolder = path.join(resultsFolder, 'sarif');
     io.mkdirP(sarifFolder);
 
-    let sarif_data = ' ';
     for (let database of fs.readdirSync(databaseFolder)) {
         const sarifFile = path.join(sarifFolder, database + '.sarif');
         await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
@@ -38,8 +60,22 @@ async function run() {
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
         sarif_data = fs.readFileSync(sarifFile,'utf8');
+
+        let sarifObject = JSON.parse(sarif_data);
+        appendSarifRuns(combinedSarif, sarifObject);
+
         core.debug('SARIF results for database '+database+ ' created at "'+sarifFile+'"');
     }
+
+    core.debug('Combined SARIF file: ');
+    core.debug(JSON.stringify(combinedSarif));
+
+    const outputFile = core.getInput('output_file');
+    io.mkdirP(path.dirname(outputFile));
+
+    fs.writeFileSync(outputFile, JSON.stringify(combinedSarif));
+    core.debug('Combined SARIF file stored to : ' + outputFile);
+
     const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
 
     const { GITHUB_TOKEN, GITHUB_REF } = process.env;

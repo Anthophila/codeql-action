@@ -54,8 +54,11 @@ async function run() {
         const res: http.HttpClientResponse = await client.put(url, payload);
         
         core.debug('response status: ' + res.message.statusCode);
-        if (res.message.statusCode != 202) {
-            core.setFailed('Upload failed' + await res.readBody());
+        if (res.message.statusCode == 500) {
+            core.error('Upload failed: ' + await res.readBody());
+        }
+        else if (res.message.statusCode != 202) {
+            core.setFailed('Upload failed: ' + await res.readBody());
         }
 
     } catch (error) {

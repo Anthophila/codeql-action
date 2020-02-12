@@ -44,7 +44,6 @@ async function run() {
         }
     }
 
-    let sarif_data = ' ';
     let combinedSarif: SARIFFile = {
       version: null,
       runs: []
@@ -59,9 +58,8 @@ async function run() {
                                     '--format=sarif-latest', '--output=' + sarifFile,
                                     '--sarif-add-snippets',
                                     database + '-lgtm.qls']);
-        sarif_data = fs.readFileSync(sarifFile,'utf8');
 
-        let sarifObject = JSON.parse(sarif_data);
+        let sarifObject = JSON.parse(fs.readFileSync(sarifFile,'utf8'));
         appendSarifRuns(combinedSarif, sarifObject);
 
         core.debug('SARIF results for database '+database+ ' created at "'+sarifFile+'"');
@@ -76,48 +74,6 @@ async function run() {
     fs.writeFileSync(outputFile, JSON.stringify(combinedSarif));
     core.debug('Combined SARIF file stored to : ' + outputFile);
 
-    const zipped_sarif = zlib.gzipSync(sarif_data).toString('base64');
-
-    const { GITHUB_TOKEN, GITHUB_REF } = process.env;
-    if (GITHUB_TOKEN && GITHUB_REF) {
-        const octokit = new github.GitHub(GITHUB_TOKEN);
-
-        const { data: checks } = await octokit.checks.listForRef(
-          {
-            ...github.context.repo,
-            ref: GITHUB_REF
-          });
-
-        const check_name = core.getInput('check_name');
-
-        let check_run_id;
-        if (check_name) {
-          check_run_id = checks.check_runs.filter(run => run.name === check_name)[0].id;
-          // We're only interested in the check runs created from this action.
-          // This filters out only those check runs that share our check run name
-        } else {
-          check_run_id = checks.check_runs[0].id;
-          // if check_name is not provided, fallback to naively using the latest check run
-        }
-
-        console.log({
-         ...github.context.repo,
-         check_run_id,
-         output: {
-            title: 'SARIF alerts in a base64 zip',
-            summary: 'base64 zip',
-            text: zipped_sarif.length
-          }});
-
-        await octokit.checks.update({
-         ...github.context.repo,
-         check_run_id,
-         output: {
-            title: 'SARIF alerts in a base64 zip',
-            summary: 'base64 zip',
-            text: zipped_sarif
-          }});
-      }
   } catch (error) {
     core.setFailed(error.message);
   }

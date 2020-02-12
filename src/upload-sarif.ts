@@ -46,8 +46,11 @@ async function run() {
             const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
             const res: http.HttpClientResponse = await client.put('https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis', payload);
             core.debug('response status: ' + res.message.statusCode);
-            if (res.message.statusCode != 202) {
-                core.setFailed('Upload failed' + await res.readBody());
+            if (res.message.statusCode == 500) {
+                core.error('Upload failed: ' + await res.readBody());
+            }
+            else if (res.message.statusCode != 202) {
+                core.setFailed('Upload failed: ' + await res.readBody());
             }
         }
     } catch (error) {

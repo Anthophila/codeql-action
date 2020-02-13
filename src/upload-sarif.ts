@@ -1,10 +1,9 @@
 import * as core from '@actions/core';
-import * as exec from '@actions/exec';
 import * as http from '@actions/http-client';
 import * as auth from '@actions/http-client/auth';
 
 import * as fs from 'fs';
-import * as path from 'path';
+import zlib from 'zlib';
 
 async function run() {
 
@@ -38,13 +37,15 @@ async function run() {
         }
 
         const sarifFile = core.getInput('sarif_file');
+        const sarifPayload = fs.readFileSync(sarifFile).toString();
+        const zipped_sarif = zlib.gzipSync(sarifPayload).toString('base64');
 
         const payload = JSON.stringify({
             "commit_oid": commitOid,
             "branch_name": branchName,
             "ref": branchName,
             "analysis_name": analysisName,
-            "sarif": fs.readFileSync(sarifFile).toString()
+            "sarif": zipped_sarif
         });
         core.debug(payload);
 

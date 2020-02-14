@@ -26,7 +26,7 @@ steps:
    ./configure
 - uses: Anthophila/codeql-action/codeql/init@master
   with:
-   language: cpp, python
+   languages: cpp, python
 - run: |
     make bootstrap
     make release

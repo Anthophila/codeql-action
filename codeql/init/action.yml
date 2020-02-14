@@ -6,9 +6,12 @@ inputs:
     description: URL of CodeQL tools
     required: false
     default: https://github.com/Anthophila/codeql-action/releases/download/codeql-bundle/codeql-bundle.zip
+  languages:
+    description: The languages to be analysed
+    required: false
   language:
-    description: The language to be analysed
-    required: true
+    description: The languages to be analysed (deprecated)
+    required: false
 runs:
   using: 'node12'
   main: '../../lib/setup-tracer.js'

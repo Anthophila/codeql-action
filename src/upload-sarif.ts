@@ -42,7 +42,6 @@ async function run() {
 
         const payload = JSON.stringify({
             "commit_oid": commitOid,
-            "branch_name": branchName,
             "ref": branchName,
             "analysis_name": analysisName,
             "sarif": zipped_sarif

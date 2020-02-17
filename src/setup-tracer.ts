@@ -128,14 +128,10 @@ function workspaceFolder() : string {
 
 async function run() {
   try {
-    let langs = core.getInput('languages', { required: false }); // TODO change to required: true
-    // TODO remove this conditional
-    if (langs === "") {
-        langs = core.getInput('language', { required: true });
-    }
-
-    let languages = langs.split(',');
-    languages = languages.map(x => x.trim()).filter(x => x.length > 0);
+    const languages = core.getInput('languages', { required: true })
+                          .split(',')
+                          .map(x => x.trim())
+                          .filter(x => x.length > 0);
 
     const sourceRoot = path.resolve();
 

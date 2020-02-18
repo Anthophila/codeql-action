@@ -151,16 +151,15 @@ async function run() {
     // TODO: replace this code once CodeQL supports multi-language tracing
     for (let language of languages) {
         const languageDatabase = path.join(databaseFolder, language);
+        // Init language database
+        await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot ]);
         // TODO: add better detection of 'traced languages' instead of using a hard coded list
         if (['cpp', 'java', 'csharp'].includes(language)) {
-            await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot ]);
             const config : TracerConfig = await tracerConfig(codeqlSetup, languageDatabase);
             tracedLanguages[language] = config;
-        } else {
-            await exec.exec(codeqlSetup.cmd, ['database', 'create', languageDatabase, 
-                                              '--language=' + language, '--source-root=' + sourceRoot ]);
         }
     }
+    core.exportVariable('CODEQL_ACTION_LANGUAGES', languages.join(','));
 
     const tracedLanguageKeys = Object.keys(tracedLanguages);
     if (tracedLanguageKeys.length > 0) {

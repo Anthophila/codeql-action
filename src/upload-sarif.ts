@@ -16,12 +16,12 @@ async function run() {
         core.debug('commitOid: ' + commitOid);
 
         // Its in the form of 'refs/heads/master'
-        const branchName = process.env['GITHUB_REF'];
-        if (branchName == null) {
+        const ref = process.env['GITHUB_REF'];
+        if (ref == null) {
             core.setFailed('GITHUB_REF environment variable must be set');
             return;
         }
-        core.debug('branchName: ' + branchName);
+        core.debug('ref: ' + ref);
 
         const analysisName = process.env['GITHUB_WORKFLOW'];
         if (analysisName == null) {
@@ -42,8 +42,7 @@ async function run() {
 
         const payload = JSON.stringify({
             "commit_oid": commitOid,
-            "branch_name": branchName,
-            "ref": branchName,
+            "ref": ref,
             "analysis_name": analysisName,
             "sarif": zipped_sarif
         });

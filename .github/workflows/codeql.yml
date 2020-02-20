@@ -14,5 +14,3 @@ jobs:
         languages: javascript
     - uses: ./codeql/finish
     - uses: ./codeql/upload-sarif
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

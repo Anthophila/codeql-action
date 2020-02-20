@@ -6,6 +6,9 @@ inputs:
     description: The SARIF file to be uploaded
     required: false
     default: '../results.sarif'
+  token:
+    default: ${{ github.token }}
+
 runs:
   using: 'node12'
   main: '../../lib/upload-sarif.js'

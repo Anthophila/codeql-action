@@ -3,6 +3,7 @@ import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as setuptools from './setup-tools';
+import * as sharedEnv from './shared-environment';
 
 type TracerConfig = {
     spec: string;
@@ -132,7 +133,7 @@ async function run() {
         .split(',')
         .map(x => x.trim())
         .filter(x => x.length > 0);
-    core.exportVariable('CODEQL_ACTION_LANGUAGES', languages.join(','));
+    core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
 
     const sourceRoot = path.resolve();
 
@@ -159,11 +160,10 @@ async function run() {
             scannedLanguages.push(language);
         }
     }
-    core.exportVariable('CODEQL_ACTION_SCANNED_LANGUAGES', scannedLanguages.join(','));
+    core.exportVariable(sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES, scannedLanguages.join(','));
 
     const tracedLanguageKeys = Object.keys(tracedLanguages);
     if (tracedLanguageKeys.length > 0) {
-        core.exportVariable('CODEQL_ACTION_TRACED_LANGUAGES', tracedLanguageKeys.join(','));
         const mainTracerConfig = concatTracerConfigs(tracedLanguages);
         if (mainTracerConfig.spec) { 
             for (let entry of Object.entries(mainTracerConfig.env)) {

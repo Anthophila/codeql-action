@@ -13,15 +13,15 @@ jobs:
     strategy:
       fail-fast: false
 
-    runs-on: ubuntu-latest // you can try windows too but macos is not yet supported
+    runs-on: ubuntu-latest # you can try windows too but macos is not yet supported
 
     steps:
     - uses: actions/checkout@v1
       with:
-        submodules: recursive // omit this if your repository doesn't use submodules
+        submodules: recursive # omit this if your repository doesn't use submodules
     - uses: Anthophila/codeql-action/codeql/init@master
       with:
-        languages: go, javascript // comma separated list of values from {go, python, javascript, java, cpp, csharp} (not YET ruby, sorry!)
+        languages: go, javascript # comma separated list of values from {go, python, javascript, java, cpp, csharp} (not YET ruby, sorry!)
     - uses: Anthophila/codeql-action/codeql/finish@master
     - uses: Anthophila/codeql-action/codeql/upload-sarif@master
       env:
@@ -35,7 +35,7 @@ If you prefer to integrate this within an existing CI workflow, it should end up
       with:
         languages: go, javascript
 
-    // Here is where you build your code
+    # Here is where you build your code
     - run: |  
         make bootstrap
         make release

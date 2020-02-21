@@ -30,11 +30,7 @@ async function run() {
         }
         core.debug('analysisName: ' + analysisName);
 
-        const githubToken = process.env['GITHUB_TOKEN'];
-        if (githubToken == null) {
-            core.setFailed('GITHUB_TOKEN environment variable must be set');
-            return;
-        }
+        const githubToken = core.getInput('token');
 
         const sarifFile = core.getInput('sarif_file');
         const sarifPayload = fs.readFileSync(sarifFile).toString();

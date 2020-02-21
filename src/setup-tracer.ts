@@ -138,6 +138,13 @@ async function run() {
     core.startGroup('Setup CodeQL tools');
     const codeqlSetup = await setuptools.setupCodeQL();
     core.endGroup();
+
+    // Forward Go flags
+    const goFlags =  process.env['GOFLAGS'];
+    if (goFlags) {
+        core.exportVariable('GOFLAGS', goFlags);
+        core.warning("The use of GO_FLAGS in the init action is deprecated. Please add them in the finish action");
+    }
    
     const codeqlResultFolder = path.resolve(workspaceFolder(), 'codeql_results');
     const databaseFolder = path.resolve(codeqlResultFolder, 'db');

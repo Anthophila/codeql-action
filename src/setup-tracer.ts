@@ -3,6 +3,7 @@ import * as exec from '@actions/exec';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as setuptools from './setup-tools';
+import * as sharedEnv from './shared-environment';
 
 type TracerConfig = {
     spec: string;
@@ -129,9 +130,10 @@ function workspaceFolder() : string {
 async function run() {
   try {
     const languages = core.getInput('languages', { required: true })
-                          .split(',')
-                          .map(x => x.trim())
-                          .filter(x => x.length > 0);
+        .split(',')
+        .map(x => x.trim())
+        .filter(x => x.length > 0);
+    core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
 
     const sourceRoot = path.resolve();
 
@@ -143,24 +145,25 @@ async function run() {
     const databaseFolder = path.resolve(codeqlResultFolder, 'db');
 
     let tracedLanguages : {[key: string]: TracerConfig} = {};
+    let scannedLanguages : string[] = [];
 
     // TODO: replace this code once CodeQL supports multi-language tracing
     for (let language of languages) {
         const languageDatabase = path.join(databaseFolder, language);
+        // Init language database
+        await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot ]);
         // TODO: add better detection of 'traced languages' instead of using a hard coded list
         if (['cpp', 'java', 'csharp'].includes(language)) {
-            await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot ]);
             const config : TracerConfig = await tracerConfig(codeqlSetup, languageDatabase);
             tracedLanguages[language] = config;
         } else {
-            await exec.exec(codeqlSetup.cmd, ['database', 'create', languageDatabase, 
-                                              '--language=' + language, '--source-root=' + sourceRoot ]);
+            scannedLanguages.push(language);
         }
     }
+    core.exportVariable(sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES, scannedLanguages.join(','));
 
     const tracedLanguageKeys = Object.keys(tracedLanguages);
     if (tracedLanguageKeys.length > 0) {
-        core.exportVariable('CODEQL_ACTION_TRACED_LANGUAGES', tracedLanguageKeys.join(','));
         const mainTracerConfig = concatTracerConfigs(tracedLanguages);
         if (mainTracerConfig.spec) { 
             for (let entry of Object.entries(mainTracerConfig.env)) {

@@ -1,12 +1,11 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as github from '@actions/github';
-
 import * as io from '@actions/io';
+
 import * as path from 'path';
 import * as fs from 'fs';
 
-import zlib from 'zlib';
+import * as sharedEnv from './shared-environment';
 
 interface SARIFFile {
   version: string | null;
@@ -18,61 +17,95 @@ function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
   if (combinedSarif.version === null) {
     combinedSarif.version = newSarifRuns.version;
     core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version))
-  } else if (combinedSarif.version !== newSarifRuns.version){
+  } else if (combinedSarif.version !== newSarifRuns.version) {
     throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
   }
 
   combinedSarif.runs.push(...newSarifRuns.runs);
 }
 
+async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
+  // Create db for scanned languages
+  const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES] || '';
+  for (const language of scannedLanguages.split(',')) {
+    // Get extractor location
+    let extractorPath = '';
+    await exec.exec(codeqlCmd, ['resolve', 'extractor', '--format=json', '--language=' + language], {
+      silent: true,
+      listeners: {
+        stdout: (data) => { extractorPath += data.toString(); },
+        stderr: (data) => { process.stderr.write(data); }
+      }
+    });
+
+    // Set trace command
+    const ext = process.platform == 'win32' ? '.cmd' : '.sh';
+    const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
+
+    // Run trace command
+    await exec.exec(codeqlCmd, ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
+  }
+
+  const languages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES] || '';
+  for (const language of languages.split(',')) {
+    await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
+  }
+}
+
+async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SARIFFile> {
+  const databaseFolder = path.join(resultsFolder, 'db');
+
+  let combinedSarif: SARIFFile = {
+    version: null,
+    runs: []
+  }
+
+  const sarifFolder = path.join(resultsFolder, 'sarif');
+  io.mkdirP(sarifFolder);
+
+  for (let database of fs.readdirSync(databaseFolder)) {
+    const sarifFile = path.join(sarifFolder, database + '.sarif');
+    await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
+      '--format=sarif-latest', '--output=' + sarifFile,
+      '--sarif-add-snippets',
+      database + '-lgtm.qls']);
+
+    let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
+    appendSarifRuns(combinedSarif, sarifObject);
+
+    core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
+  }
+  
+  return combinedSarif;
+}
+
 async function run() {
   try {
-
     console.log(process.env);
 
-    core.exportVariable('ODASA_TRACER_CONFIGURATION', '');
-    delete process.env['ODASA_TRACER_CONFIGURATION'];
+    core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
+    delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
-    const codeqlCmd = process.env['CODEQL_ACTION_CMD'] || 'CODEQL_ACTION_CMD';
-    const resultsFolder = process.env['CODEQL_ACTION_RESULTS'] || 'CODEQL_ACTION_RESULTS';
-    const tracedLanguages = process.env['CODEQL_ACTION_TRACED_LANGUAGES'];
+    const codeqlCmd = process.env[sharedEnv.CODEQL_ACTION_CMD] || 'CODEQL_ACTION_CMD';
+    const resultsFolder = process.env[sharedEnv.CODEQL_ACTION_RESULTS] || 'CODEQL_ACTION_RESULTS';
     const databaseFolder = path.join(resultsFolder, 'db');
 
-    if (tracedLanguages) {
-        for (const language of tracedLanguages.split(',')) {
-            await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
-        }
-    }
+    core.startGroup('Finalize database creation');
+    await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
+    core.endGroup();
 
-    let combinedSarif: SARIFFile = {
-      version: null,
-      runs: []
-    }
+    core.startGroup('Analyze database');
+    const sarifResults = await runQueries(codeqlCmd, resultsFolder);
+    core.endGroup();
 
-    const sarifFolder = path.join(resultsFolder, 'sarif');
-    io.mkdirP(sarifFolder);
-
-    for (let database of fs.readdirSync(databaseFolder)) {
-        const sarifFile = path.join(sarifFolder, database + '.sarif');
-        await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
-                                    '--format=sarif-latest', '--output=' + sarifFile,
-                                    '--sarif-add-snippets',
-                                    database + '-lgtm.qls']);
-
-        let sarifObject = JSON.parse(fs.readFileSync(sarifFile,'utf8'));
-        appendSarifRuns(combinedSarif, sarifObject);
-
-        core.debug('SARIF results for database '+database+ ' created at "'+sarifFile+'"');
-    }
-
-    core.debug('Combined SARIF file: ');
-    core.debug(JSON.stringify(combinedSarif));
-
+    // Write analysis result to a file
     const outputFile = core.getInput('output_file');
     io.mkdirP(path.dirname(outputFile));
+    fs.writeFileSync(outputFile, JSON.stringify(sarifResults));
 
-    fs.writeFileSync(outputFile, JSON.stringify(combinedSarif));
-    core.debug('Combined SARIF file stored to : ' + outputFile);
+    core.debug('Analysis results: ');
+    core.debug(JSON.stringify(sarifResults));
+    core.debug('Analysis results stored in: ' + outputFile);
 
   } catch (error) {
     core.setFailed(error.message);

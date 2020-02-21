@@ -6,9 +6,12 @@ inputs:
     description: The SARIF file to be uploaded
     required: false
     default: '../results.sarif'
+  checkout_path:
+    description: "The path at which the analyzed repository was checked out. Used to relativeize any absolute paths in the uploaded SARIF file."
+    required: false
+    default: "$GITHUB_WORKSPACE" # Actions does not have a way of interpolating variables here, but this is still a useful default for documentation purposes.
   token:
     default: ${{ github.token }}
-
 runs:
   using: 'node12'
   main: '../../lib/upload-sarif.js'

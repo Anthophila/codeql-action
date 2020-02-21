@@ -7,6 +7,8 @@ import * as fs from 'fs';
 
 import * as sharedEnv from './shared-environment';
 
+import * as upload_lib from './upload-lib';
+
 interface SARIFFile {
   version: string | null;
   runs: any[];
@@ -75,7 +77,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
 
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
   }
-  
+
   return combinedSarif;
 }
 
@@ -96,16 +98,21 @@ async function run() {
 
     core.startGroup('Analyze database');
     const sarifResults = await runQueries(codeqlCmd, resultsFolder);
+    const sarifPayload = JSON.stringify(sarifResults);
     core.endGroup();
 
     // Write analysis result to a file
     const outputFile = core.getInput('output_file');
     io.mkdirP(path.dirname(outputFile));
-    fs.writeFileSync(outputFile, JSON.stringify(sarifResults));
+    fs.writeFileSync(outputFile, sarifPayload);
 
     core.debug('Analysis results: ');
-    core.debug(JSON.stringify(sarifResults));
+    core.debug(sarifPayload);
     core.debug('Analysis results stored in: ' + outputFile);
+
+    if ('true' === core.getInput('upload')) {
+      upload_lib.upload_sarif(outputFile);
+    }
 
   } catch (error) {
     core.setFailed(error.message);

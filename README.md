@@ -57,7 +57,7 @@ Try passing
 env:
       GOFLAGS: "-mod=vendor"
 ```
-to `Anthophila/codeql-action/codeql/init`.
+to `Anthophila/codeql-action/codeql/finish`.
 
 ### If you do not use a vendor directory
 

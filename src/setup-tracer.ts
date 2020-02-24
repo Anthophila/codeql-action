@@ -145,7 +145,7 @@ async function run() {
     const goFlags =  process.env['GOFLAGS'];
     if (goFlags) {
         core.exportVariable('GOFLAGS', goFlags);
-        core.warning("The use of GO_FLAGS in the init action is deprecated. Please add them in the finish action");
+        core.warning("Passing the GOFLAGS env parameter to the codeql/init action is deprecated. Please move this to the codeql/finish action.");
     }
    
     const codeqlResultFolder = path.resolve(workspaceFolder(), 'codeql_results');

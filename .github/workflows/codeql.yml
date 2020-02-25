@@ -13,4 +13,3 @@ jobs:
       with: 
         languages: javascript
     - uses: ./codeql/finish
-    - uses: ./codeql/upload-sarif

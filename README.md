@@ -23,7 +23,6 @@ jobs:
       with:
         languages: go, javascript # comma separated list of values from {go, python, javascript, java, cpp, csharp} (not YET ruby, sorry!)
     - uses: Anthophila/codeql-action/codeql/finish@master
-    - uses: Anthophila/codeql-action/codeql/upload-sarif@master
 ```
 
 If you prefer to integrate this within an existing CI workflow, it should end up looking something like this:
@@ -39,7 +38,6 @@ If you prefer to integrate this within an existing CI workflow, it should end up
         make release
 
     - uses: Anthophila/codeql-action/codeql/finish@master
-    - uses: Anthophila/codeql-action/codeql/upload-sarif@master
 ```
 
 If you have any questions you can find us on Slack at #dsp-code-scanning.

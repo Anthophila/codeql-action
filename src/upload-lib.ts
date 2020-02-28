@@ -45,13 +45,6 @@ export async function upload_sarif(sarifFile: string) {
         const sarifPayload = fs.readFileSync(sarifFile).toString();
         const zipped_sarif = zlib.gzipSync(sarifPayload).toString('base64');
         let checkoutPath = core.getInput('checkout_path');
-        if (checkoutPath === '$GITHUB_WORKSPACE') {
-            if (!process.env.GITHUB_WORKSPACE) {
-                core.setFailed('GITHUB_WORKSPACE environment variable was not set, and no explicit checkout path was provided');
-                return;
-            }
-            checkoutPath = process.env.GITHUB_WORKSPACE;
-        }
         let checkoutURI = fileUrl(checkoutPath);
 
         const payload = JSON.stringify({

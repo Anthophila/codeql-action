@@ -28,6 +28,13 @@ export async function upload_sarif(sarifFile: string) {
         }
         core.debug('commitOid: ' + commitOid);
 
+        const workflowRunID = process.env['GITHUB_RUN_ID'];
+        if (workflowRunID == null) {
+            core.setFailed('GITHUB_RUN_ID environment variable must be set');
+            return;
+        }
+        core.debug('GITHUB_RUN_ID=' + workflowRunID);
+
         // Its in the form of 'refs/heads/master'
         const ref = process.env['GITHUB_REF'];
         if (ref === null) {
@@ -56,6 +63,7 @@ export async function upload_sarif(sarifFile: string) {
             "analysis_name": analysisName,
             "sarif": zipped_sarif,
             "checkout_uri": checkoutURI,
+            "workflow_run_id": workflowRunID,
         });
 
         core.info('Uploading results');

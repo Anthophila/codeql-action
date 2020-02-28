@@ -180,8 +180,10 @@ async function run() {
                 if (process.platform === 'darwin') {
                     core.exportVariable('DYLD_INSERT_LIBRARIES', path.join(codeqlSetup.tools, 'osx64', 'libtrace.dylib'));
                 } else if (process.platform === 'win32') {
-                    await exec.exec('powershell',
-                        [path.resolve(__dirname, '..', 'src', 'inject-tracer.ps1'), path.resolve(codeqlSetup.tools, 'win64', 'tracer.exe')],
+                    await exec.exec(
+                        'powershell',
+                        [path.resolve(__dirname, '..', 'src', 'inject-tracer.ps1'),
+                        path.resolve(codeqlSetup.tools, 'win64', 'tracer.exe')],
                         { env: { 'ODASA_TRACER_CONFIGURATION': mainTracerConfig.spec } });
                 } else {
                     core.exportVariable('LD_PRELOAD', path.join(codeqlSetup.tools, 'linux64', '${LIB}trace.so'));

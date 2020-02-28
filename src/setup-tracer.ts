@@ -59,7 +59,7 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
     // Merge the environments
     const env: { [key: string]: string; } = {};
-    var envSize = 0;
+    let envSize = 0;
     for (let v of Object.values(configs)) {
         for (let e of Object.entries(v.env)) {
             const name = e[0];
@@ -101,7 +101,7 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     fs.writeFileSync(spec, newSpecContent.join('\n'));
 
     // Prepare the content of the compound environment file
-    var buffer = Buffer.alloc(4);
+    let buffer = Buffer.alloc(4);
     buffer.writeInt32LE(envSize, 0);
     for (let e of Object.entries(env)) {
         const key = e[0];

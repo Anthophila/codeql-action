@@ -68,8 +68,7 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
                 if (env[name] !== value) {
                     throw Error('Incompatible values in environment parameter ' + name + ': ' + env[name] + ' and ' + value);
                 }
-            }
-            else {
+            } else {
                 env[name] = value;
                 envSize += 1;
             }

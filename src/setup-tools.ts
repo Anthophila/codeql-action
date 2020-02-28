@@ -5,10 +5,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export class CodeQLSetup {
-    dist: string;
-    tools: string;
-    cmd: string;
-    platform: string;
+    public dist: string;
+    public tools: string;
+    public cmd: string;
+    public platform: string;
 
     constructor(codeqlDist: string) {
         this.dist = codeqlDist;

@@ -16,8 +16,8 @@ export function should_abort(actionName : string) : boolean {
     }
 
     if (ref.startsWith('refs/pull/')) {
-        core.info( 'The CodeQL ' + actionName + ' action is intended for workflows triggered on `push` events, '
-                 + 'but the current workflow is running on a pull request. Aborting.');
+        core.warning( 'The CodeQL ' + actionName + ' action is intended for workflows triggered on `push` events, '
+                    + 'but the current workflow is running on a pull request. Aborting.');
         return true;
     }
 

@@ -1,5 +1,7 @@
 import * as fs from 'fs';
 
+import * as core from '@actions/core';
+
 export class Config {
     name: string = "";
     queries: string[] = [];
@@ -10,9 +12,16 @@ export class Config {
 const configPath = '/tmp/codeql-action/config'
 
 export function saveConfig(config: Config) {
-    fs.writeFileSync(configPath, JSON.stringify(config), 'utf8');
+    const configString = JSON.stringify(config);
+    fs.writeFileSync(configPath, configString, 'utf8');
+    core.debug('Saved config:');
+    core.debug(configString);
 }
 
 export function loadConfig() : Config {
-    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const configString = fs.readFileSync(configPath, 'utf8');
+    core.debug('Loaded config:');
+    core.debug(configString);
+    return JSON.parse(configString);
 }
+

@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import zlib from 'zlib';
 
 export async function upload_sarif(sarifFile: string) {
+    core.startGroup("Uploading results");
     try {
         // The upload may happen in the finish or upload-sarif actions but we only want
         // the file to be uploaded once, so we create an extra file next to it to mark
@@ -50,8 +51,8 @@ export async function upload_sarif(sarifFile: string) {
             "analysis_name": analysisName,
             "sarif": zipped_sarif
         });
-        core.debug(payload);
 
+        core.info('Uploading results');
         const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
         const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
         const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis';
@@ -59,10 +60,16 @@ export async function upload_sarif(sarifFile: string) {
 
         core.debug('response status: ' + res.message.statusCode);
         if (res.message.statusCode == 500) {
+            // If the upload fails with 500 then we assume it is a temporary problem
+            // with turbo-scan and not an error that the user has caused or can fix.
+            // We avoid marking the job as failed to avoid breaking CI workflows.
             core.error('Upload failed: ' + await res.readBody());
         }
         else if (res.message.statusCode != 202) {
             core.setFailed('Upload failed: ' + await res.readBody());
+        }
+        else {
+            core.info("Successfully uploaded results");
         }
 
         // Mark the sarif file as uploaded
@@ -71,4 +78,5 @@ export async function upload_sarif(sarifFile: string) {
     } catch (error) {
         core.setFailed(error.message);
     }
+    core.endGroup();
 }

@@ -21,34 +21,14 @@ export async function upload_sarif(sarifFile: string) {
             return;
         }
 
-        const commitOid = process.env['GITHUB_SHA'];
-        if (commitOid === null) {
-            core.setFailed('GITHUB_SHA environment variable must be set');
-            return;
-        }
-        core.debug('commitOid: ' + commitOid);
+        const commitOid = get_required_env_param('GITHUB_SHA');
+        const workflowRunID = get_required_env_param('GITHUB_RUN_ID');
+        const ref = get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
+        const analysisName = get_required_env_param('GITHUB_WORKFLOW');
 
-        const workflowRunID = process.env['GITHUB_RUN_ID'];
-        if (workflowRunID == null) {
-            core.setFailed('GITHUB_RUN_ID environment variable must be set');
+        if (commitOid == null || workflowRunID == null || ref == null || analysisName == null) {
             return;
         }
-        core.debug('GITHUB_RUN_ID=' + workflowRunID);
-
-        // Its in the form of 'refs/heads/master'
-        const ref = process.env['GITHUB_REF'];
-        if (ref === null) {
-            core.setFailed('GITHUB_REF environment variable must be set');
-            return;
-        }
-        core.debug('ref: ' + ref);
-
-        const analysisName = process.env['GITHUB_WORKFLOW'];
-        if (analysisName === null) {
-            core.setFailed('GITHUB_WORKFLOW environment variable must be set');
-            return;
-        }
-        core.debug('analysisName: ' + analysisName);
 
         let sarifPayload = fs.readFileSync(sarifFile).toString();
         sarifPayload = fingerprints.addFingerprints(sarifPayload);
@@ -92,4 +72,14 @@ export async function upload_sarif(sarifFile: string) {
         core.setFailed(error.message);
     }
     core.endGroup();
+}
+
+// Get an environment parameter, and fail the action if it has no value
+function get_required_env_param(paramName: string) : string | undefined {
+    const value = process.env[paramName];
+    if (value == null) {
+        core.setFailed(paramName + ' environment variable must be set');
+    }
+    core.debug(paramName + '=' + value);
+    return value;
 }

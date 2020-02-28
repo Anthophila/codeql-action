@@ -18,7 +18,11 @@ const CRITICAL_TRACER_VARS = new Set(
         , 'SEMMLE_JAVA_TOOL_OPTIONS'
     ]);
 
-async function tracerConfig(codeql: setuptools.CodeQLSetup, database: string, compilerSpec?: string): Promise<TracerConfig> {
+async function tracerConfig(
+    codeql: setuptools.CodeQLSetup,
+    database: string,
+    compilerSpec?: string): Promise<TracerConfig> {
+
     const compilerSpecArg = compilerSpec ? ["--compiler-spec=" + compilerSpec] : [];
 
     let envFile = path.resolve(database, 'working', 'env.tmp');
@@ -66,7 +70,8 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
             const value = e[1];
             if (name in env) {
                 if (env[name] !== value) {
-                    throw Error('Incompatible values in environment parameter ' + name + ': ' + env[name] + ' and ' + value);
+                    throw Error('Incompatible values in environment parameter ' +
+                        name + ': ' + env[name] + ' and ' + value);
                 }
             } else {
                 env[name] = value;
@@ -178,7 +183,9 @@ async function run() {
 
                 core.exportVariable('ODASA_TRACER_CONFIGURATION', mainTracerConfig.spec);
                 if (process.platform === 'darwin') {
-                    core.exportVariable('DYLD_INSERT_LIBRARIES', path.join(codeqlSetup.tools, 'osx64', 'libtrace.dylib'));
+                    core.exportVariable(
+                        'DYLD_INSERT_LIBRARIES',
+                        path.join(codeqlSetup.tools, 'osx64', 'libtrace.dylib'));
                 } else if (process.platform === 'win32') {
                     await exec.exec(
                         'powershell',

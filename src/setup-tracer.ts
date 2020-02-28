@@ -5,6 +5,8 @@ import * as fs from 'fs';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
+import * as configUtils from './config-utils';
+import * as yaml from 'js-yaml';
 
 type TracerConfig = {
     spec: string;
@@ -128,12 +130,54 @@ function workspaceFolder() : string {
     return workspaceFolder;
 }
 
+function initConfig() : configUtils.Config {
+    const configFile = core.getInput('configFile');
+    const config = new configUtils.Config();
+
+    // If no config file was provided create an empty one
+    if (configFile === '') {
+        return config;
+    }
+    const parsedYAML = yaml.safeLoad(fs.readFileSync('./file.yml', 'utf8'));
+
+    if (parsedYAML.name) {
+        config.name = parsedYAML.name;
+    }
+
+    const queries = parsedYAML.queries as any[];
+    if (queries) {
+        queries.forEach(query => {
+            if (query.uses) {
+                config.queries.push(query.uses);
+            }
+        });
+    }
+
+    const pathsIgnore = parsedYAML['paths-ignore'] as string[];
+    if (pathsIgnore) {
+        pathsIgnore.forEach(path => {
+            config.pathsIgnore.push(path);
+        });
+    }
+
+    const paths = parsedYAML.queries as string[];
+    if (paths) {
+        paths.forEach(path => {
+            config.paths.push(path);
+        });
+    }
+
+    return config;
+}
+
 async function run() {
   try {
     if (util.should_abort('init')) {
         return;
     }
 
+    const config = initConfig();
+    
     const languages = core.getInput('languages', { required: true })
         .split(',')
         .map(x => x.trim())

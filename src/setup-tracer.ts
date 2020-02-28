@@ -242,6 +242,8 @@ async function run() {
     // TODO: make this a "private" environment variable of the action
     core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
     core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
+
+    configUtils.saveConfig(config);
   } catch (error) {
     core.setFailed(error.message);
   }

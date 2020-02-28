@@ -77,7 +77,7 @@ export async function upload_sarif(sarifFile: string) {
 // Get an environment parameter, and fail the action if it has no value
 function get_required_env_param(paramName: string) : string | undefined {
     const value = process.env[paramName];
-    if (value == null) {
+    if (value === undefined) {
         core.setFailed(paramName + ' environment variable must be set');
     }
     core.debug(paramName + '=' + value);

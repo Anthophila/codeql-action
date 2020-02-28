@@ -41,7 +41,7 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
     });
 
     // Set trace command
-    const ext = process.platform == 'win32' ? '.cmd' : '.sh';
+    const ext = process.platform === 'win32' ? '.cmd' : '.sh';
     const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
 
     // Run trace command

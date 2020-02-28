@@ -15,14 +15,14 @@ export class CodeQLSetup {
         this.tools = path.join(this.dist, 'tools');
         this.cmd = path.join(codeqlDist, 'codeql');
         // TODO check process.arch ?
-        if (process.platform == 'win32') {
+        if (process.platform === 'win32') {
             this.platform = 'win64';
             if (this.cmd.endsWith('codeql')) {
                 this.cmd += ".cmd";
             }
-        } else if (process.platform == 'linux') {
+        } else if (process.platform === 'linux') {
             this.platform = 'linux64';
-        } else if (process.platform == 'darwin') {
+        } else if (process.platform === 'darwin') {
             this.platform = 'osx64';
         } else {
             throw new Error("Unsupported plaform: " + process.platform);

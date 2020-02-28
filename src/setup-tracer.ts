@@ -37,7 +37,7 @@ async function tracerConfig(codeql: setuptools.CodeQLSetup, database: string, co
         const key = entry[0];
         const value = entry[1];
         // skip ODASA_TRACER_CONFIGURATION as it is handled separately
-        if (key == 'ODASA_TRACER_CONFIGURATION') {
+        if (key === 'ODASA_TRACER_CONFIGURATION') {
             continue;
         }
         // skip undefined values
@@ -178,9 +178,9 @@ async function run() {
                 }
 
                 core.exportVariable('ODASA_TRACER_CONFIGURATION', mainTracerConfig.spec);
-                if (process.platform == 'darwin') {
+                if (process.platform === 'darwin') {
                     core.exportVariable('DYLD_INSERT_LIBRARIES', path.join(codeqlSetup.tools, 'osx64', 'libtrace.dylib'));
-                } else if (process.platform == 'win32') {
+                } else if (process.platform === 'win32') {
                     await exec.exec('powershell',
                         [path.resolve(__dirname, '..', 'src', 'inject-tracer.ps1'), path.resolve(codeqlSetup.tools, 'win64', 'tracer.exe')],
                         { env: { 'ODASA_TRACER_CONFIGURATION': mainTracerConfig.spec } });

@@ -3,6 +3,7 @@ import * as http from '@actions/http-client';
 import * as auth from '@actions/http-client/auth';
 
 import * as fs from 'fs';
+import fileUrl from 'file-url';
 import zlib from 'zlib';
 
 export async function upload_sarif(sarifFile: string) {
@@ -43,12 +44,15 @@ export async function upload_sarif(sarifFile: string) {
 
         const sarifPayload = fs.readFileSync(sarifFile).toString();
         const zipped_sarif = zlib.gzipSync(sarifPayload).toString('base64');
+        let checkoutPath = core.getInput('checkout_path');
+        let checkoutURI = fileUrl(checkoutPath);
 
         const payload = JSON.stringify({
             "commit_oid": commitOid,
             "ref": ref,
             "analysis_name": analysisName,
-            "sarif": zipped_sarif
+            "sarif": zipped_sarif,
+            "checkout_uri": checkoutURI,
         });
         core.debug(payload);
 

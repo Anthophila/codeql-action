@@ -142,30 +142,34 @@ function initConfig() : configUtils.Config {
     }
     const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
 
-    if (parsedYAML.name) {
+    if (parsedYAML.name && typeof parsedYAML.name === "string") {
         config.name = parsedYAML.name;
     }
 
-    const queries = parsedYAML.queries as any[];
-    if (queries) {
+    const queries = parsedYAML.queries;
+    if (queries && queries instanceof Array) {
         queries.forEach(query => {
-            if (query.uses) {
+            if (query.uses && typeof query.uses === "string") {
                 config.queries.push(query.uses);
             }
         });
     }
 
-    const pathsIgnore = parsedYAML['paths-ignore'] as string[];
-    if (pathsIgnore) {
+    const pathsIgnore = parsedYAML['paths-ignore'];
+    if (pathsIgnore && queries instanceof Array) {
         pathsIgnore.forEach(path => {
-            config.pathsIgnore.push(path);
+            if (typeof path === "string") {
+                config.pathsIgnore.push(path);
+            }
         });
     }
 
-    const paths = parsedYAML.paths as string[];
-    if (paths) {
+    const paths = parsedYAML.paths;
+    if (paths && paths instanceof Array) {
         paths.forEach(path => {
-            config.paths.push(path);
+            if (typeof path === "string") {
+                config.paths.push(path);
+            }
         });
     }
 

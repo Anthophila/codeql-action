@@ -11,18 +11,18 @@ export class Config {
     paths: string[] = [];
 }
 
-const configPath = '/tmp/codeql-action/config'
+const configFolder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action'
 
 export function saveConfig(config: Config) {
     const configString = JSON.stringify(config);
-    io.mkdirP(path.dirname(configPath));
-    fs.writeFileSync(configPath, configString, 'utf8');
+    io.mkdirP(configFolder);
+    fs.writeFileSync(path.join(configFolder, 'config'), configString, 'utf8');
     core.debug('Saved config:');
     core.debug(configString);
 }
 
 export function loadConfig() : Config {
-    const configString = fs.readFileSync(configPath, 'utf8');
+    const configString = fs.readFileSync(path.join(configFolder, 'config'), 'utf8');
     core.debug('Loaded config:');
     core.debug(configString);
     return JSON.parse(configString);

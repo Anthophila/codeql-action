@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
+import * as util from './util';
 
 type TracerConfig = {
     spec: string;
@@ -129,6 +130,10 @@ function workspaceFolder() : string {
 
 async function run() {
   try {
+    if (util.should_abort('init')) {
+        return;
+    }
+
     const languages = core.getInput('languages', { required: true })
         .split(',')
         .map(x => x.trim())

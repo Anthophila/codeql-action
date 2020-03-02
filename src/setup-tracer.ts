@@ -131,7 +131,8 @@ function workspaceFolder() : string {
 }
 
 function initConfig() : configUtils.Config {
-    const configFile = core.getInput('configFile');
+    const configFile = core.getInput('config-file');
+
     const config = new configUtils.Config();
 
     // If no config file was provided create an empty one
@@ -139,7 +140,7 @@ function initConfig() : configUtils.Config {
         core.debug('No configuration file was provided')
         return config;
     }
-    const parsedYAML = yaml.safeLoad(fs.readFileSync('./file.yml', 'utf8'));
+    const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
 
     if (parsedYAML.name) {
         config.name = parsedYAML.name;

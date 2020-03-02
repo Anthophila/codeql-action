@@ -136,6 +136,7 @@ function initConfig() : configUtils.Config {
 
     // If no config file was provided create an empty one
     if (configFile === '') {
+        core.debug('No configuration file was provided')
         return config;
     }
     const parsedYAML = yaml.safeLoad(fs.readFileSync('./file.yml', 'utf8'));

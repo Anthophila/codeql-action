@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import * as io from '@actions/io';
+import * as path from 'path';
 
 import * as core from '@actions/core';
 
@@ -13,6 +15,7 @@ const configPath = '/tmp/codeql-action/config'
 
 export function saveConfig(config: Config) {
     const configString = JSON.stringify(config);
+    io.mkdirP(path.dirname(configPath));
     fs.writeFileSync(configPath, configString, 'utf8');
     core.debug('Saved config:');
     core.debug(configString);

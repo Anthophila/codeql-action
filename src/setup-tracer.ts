@@ -161,7 +161,7 @@ function initConfig() : configUtils.Config {
         });
     }
 
-    const paths = parsedYAML.queries as string[];
+    const paths = parsedYAML.paths as string[];
     if (paths) {
         paths.forEach(path => {
             config.paths.push(path);

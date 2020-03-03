@@ -29,6 +29,7 @@
     "@types/jszip": "^3.1.6",
     "file-url": "^3.0.0",
     "fs": "0.0.1-security",
+    "long": "^4.0.0",
     "path": "^0.12.7",
     "tmp": "^0.1.0",
     "zlib": "^1.0.5"
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@types/jest": "^24.0.13",
     "@types/node": "^12.0.4",
+    "@types/long": "4.0.0",
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
     "ts-jest": "^24.0.2",

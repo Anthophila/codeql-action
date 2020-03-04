@@ -36,13 +36,13 @@ export class Config {
     
         let tok = queryUses.split('@');
         if (tok.length !== 2) {
-            throw '"uses" value for queries must be a path, or owner/repo@ref'
+            throw '"uses" value for queries must be a path, or owner/repo@ref \n Found: '+queryUses;
         }
 
         const ref = tok[1];
         tok = tok[0].split('/', 3);
         if (tok.length < 2) {
-            throw '"uses" value for queries must be a path, or owner/repo@ref'
+            throw '"uses" value for queries must be a path, or owner/repo@ref \n Found: '+queryUses;
         }
 
         let external = new ExternalQuery(tok[0] + '/' + tok[1], ref);

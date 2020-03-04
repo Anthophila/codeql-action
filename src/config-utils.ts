@@ -4,11 +4,53 @@ import * as path from 'path';
 
 import * as core from '@actions/core';
 
+export class ExternalQuery {
+    repository: string;
+    ref: string;
+    path: string = '';
+
+    constructor(repository: string, ref: string) {
+        this.repository = repository;
+        this.ref = ref;
+    }
+}
+
 export class Config {
-    public name = "";
-    public queries: string[] = [];
+    public name: string = "";
+    public inRepoQueries: string[] = [];
+    public externalQueries: ExternalQuery[] = [];
     public pathsIgnore: string[] = [];
     public paths: string[] = [];
+
+    addQuery(queryUses: string) {
+        // The logic for parsing the string is based on what actions does for 
+        // parsing the 'uses' actions in the workflow file
+
+        if (queryUses === "") {
+            throw '"uses" value for queries cannot be blank'
+        }
+
+        if (queryUses.startsWith("./")) {
+            this.inRepoQueries.push(queryUses.slice(2));
+        }
+    
+        let tok = queryUses.split('@');
+        if (tok.length !== 2) {
+            throw '"uses" value for queries must be a path, or owner/repo@ref'
+        }
+
+        const ref = tok[1];
+        tok = tok[0].split('/', 3);
+        if (tok.length < 2) {
+            throw '"uses" value for queries must be a path, or owner/repo@ref'
+        }
+
+        let external = new ExternalQuery(tok[0] + '/' + tok[1], ref);
+        if (tok.length == 3) {
+            external.path = tok[2];
+        }
+        this.externalQueries.push(external);
+    }
 }
 
 const configFolder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
@@ -27,4 +69,3 @@ export function loadConfig(): Config {
     core.debug(configString);
     return JSON.parse(configString);
 }
-

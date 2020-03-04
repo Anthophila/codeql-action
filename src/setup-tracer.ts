@@ -154,7 +154,7 @@ function initConfig(): configUtils.Config {
     if (queries && queries instanceof Array) {
         queries.forEach(query => {
             if (query.uses && typeof query.uses === "string") {
-                config.queries.push(query.uses);
+                config.addQuery(query.uses);
             }
         });
     }

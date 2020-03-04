@@ -144,6 +144,8 @@ function initConfig(): configUtils.Config {
         core.debug('No configuration file was provided');
         return config;
     }
+
+    try {
     const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
 
     if (parsedYAML.name && typeof parsedYAML.name === "string") {
@@ -175,6 +177,9 @@ function initConfig(): configUtils.Config {
                 config.paths.push(path);
             }
         });
+    }
+    } catch (err) {
+        core.setFailed(err);
     }
 
     return config;

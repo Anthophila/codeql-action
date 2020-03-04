@@ -32,6 +32,7 @@ export class Config {
 
         if (queryUses.startsWith("./")) {
             this.inRepoQueries.push(queryUses.slice(2));
+            return;
         }
     
         let tok = queryUses.split('@');

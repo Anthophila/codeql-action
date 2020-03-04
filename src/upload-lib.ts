@@ -42,8 +42,8 @@ export async function upload_sarif(sarifFile: string) {
             "ref": ref,
             "analysis_name": analysisName,
             "sarif": zipped_sarif,
+            "workflow_run_id": parseInt(workflowRunID),
             "checkout_uri": checkoutURI,
-            "workflow_run_id": workflowRunID,
         });
 
         core.info('Uploading results');

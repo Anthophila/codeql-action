@@ -1,16 +1,23 @@
 name: "Integration Testing"
 
+# we may not be able to check out the ref of the fake merge commit on the pull request workflow
 on: [push, pull_request]
 
 # add another job that creates a new check suite using the API, send check suite id in our payload
 
 jobs:
   dispatch-events:
+    if: github.event.repository.full_name == 'github/codeql-action'
     runs-on: ubuntu-latest
     steps:
     - uses: peter-evans/repository-dispatch@v1
       with:
-        token: ${{ secrets. CODEQL_TESTING_TOKEN }}
+        token: ${{ secrets.CODEQL_TESTING_TOKEN }}
         repository: Anthophila/amazon-cognito-js-copy
         event-type: codeql-integration
         client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+    - name: Create check runs
+      run: |
+        curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.antiope-preview+json" \
+          https://api.github.com/repos/github/codeql-action/check-runs \
+          -D '{"name": "Integration Test Results", "head_sha": "${{ github.sha }}"}'

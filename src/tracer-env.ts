@@ -5,7 +5,7 @@ const env = {};
 for (let entry of Object.entries(process.env)) {
     const key = entry[0];
     const value = entry[1];
-    if (typeof value !== 'undefined' && key != '_' && !key.startsWith('JAVA_MAIN_CLASS_')) {
+    if (typeof value !== 'undefined' && key !== '_' && !key.startsWith('JAVA_MAIN_CLASS_')) {
         env[key] = value;
     }
 }

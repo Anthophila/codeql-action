@@ -13,9 +13,9 @@ async function run() {
     if (util.should_abort('upload-sarif')) {
         return;
     }
-    
+
     const config = configUtils.loadConfig();
-    
+
     const sarifFile = core.getInput('sarif_file');
     await upload_lib.upload_sarif(sarifFile);
 }

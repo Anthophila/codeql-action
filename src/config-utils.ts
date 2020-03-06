@@ -5,13 +5,13 @@ import * as path from 'path';
 import * as core from '@actions/core';
 
 export class Config {
-    name: string = "";
-    queries: string[] = [];
-    pathsIgnore: string[] = [];
-    paths: string[] = [];
+    public name = "";
+    public queries: string[] = [];
+    public pathsIgnore: string[] = [];
+    public paths: string[] = [];
 }
 
-const configFolder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action'
+const configFolder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
 
 export function saveConfig(config: Config) {
     const configString = JSON.stringify(config);
@@ -21,7 +21,7 @@ export function saveConfig(config: Config) {
     core.debug(configString);
 }
 
-export function loadConfig() : Config {
+export function loadConfig(): Config {
     const configString = fs.readFileSync(path.join(configFolder, 'config'), 'utf8');
     core.debug('Loaded config:');
     core.debug(configString);

@@ -9,5 +9,4 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: tslint
-      run: |
-        node_modules/.bin/tslint -c tslint.json 'src/**/*.ts'
+      run: npm run-script lint

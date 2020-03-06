@@ -21,7 +21,7 @@ export async function upload_sarif(sarifFile: string) {
         }
 
         const commitOid = process.env['GITHUB_SHA'];
-        if (commitOid == null) {
+        if (commitOid === null) {
             core.setFailed('GITHUB_SHA environment variable must be set');
             return;
         }
@@ -29,14 +29,14 @@ export async function upload_sarif(sarifFile: string) {
 
         // Its in the form of 'refs/heads/master'
         const ref = process.env['GITHUB_REF'];
-        if (ref == null) {
+        if (ref === null) {
             core.setFailed('GITHUB_REF environment variable must be set');
             return;
         }
         core.debug('ref: ' + ref);
 
         const analysisName = process.env['GITHUB_WORKFLOW'];
-        if (analysisName == null) {
+        if (analysisName === null) {
             core.setFailed('GITHUB_WORKFLOW environment variable must be set');
             return;
         }
@@ -65,10 +65,9 @@ export async function upload_sarif(sarifFile: string) {
         const res: http.HttpClientResponse = await client.put(url, payload);
 
         core.debug('response status: ' + res.message.statusCode);
-        if (res.message.statusCode == 500) {
+        if (res.message.statusCode === 500) {
             core.error('Upload failed: ' + await res.readBody());
-        }
-        else if (res.message.statusCode != 202) {
+        } else if (res.message.statusCode !== 202) {
             core.setFailed('Upload failed: ' + await res.readBody());
         }
 

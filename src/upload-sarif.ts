@@ -6,8 +6,12 @@ import * as fs from 'fs';
 import zlib from 'zlib';
 
 import * as upload_lib from './upload-lib';
+import * as util from './util';
 
 async function run() {
+    if (util.should_abort('upload-sarif')) {
+        return;
+    }
     const sarifFile = core.getInput('sarif_file');
     await upload_lib.upload_sarif(sarifFile);
 }

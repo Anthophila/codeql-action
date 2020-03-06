@@ -40,6 +40,8 @@ If you prefer to integrate this within an existing CI workflow, it should end up
     - uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
+NB: The CodeQL actions are intended to run on `push` events, not on `pull_request` events. Since the latter would produce analyses of no use, the CodeQL actions all terminate themselves without doing any work if they are run on a PR.
+
 If you have any questions you can find us on Slack at #dsp-code-scanning.
 
 And don't forget to leave your feedback on https://github.com/github/dsp-code-scanning/issues/515!

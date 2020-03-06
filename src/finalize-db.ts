@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as sharedEnv from './shared-environment';
 
 import * as upload_lib from './upload-lib';
+import * as util from './util';
 
 interface SARIFFile {
   version: string | null;
@@ -84,6 +85,10 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
 async function run() {
   try {
     console.log(process.env);
+
+    if (util.should_abort('finish')) {
+        return;
+    }
 
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];

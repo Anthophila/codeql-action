@@ -4,3 +4,5 @@
 - [ ] Confirm this change is backwards compatible with existing workflows.
 - [ ] Confirm the readme has been updated if necessary.
 
+### Rollout plan for codeql-action
+github/dsp-code-scanning/pull/692

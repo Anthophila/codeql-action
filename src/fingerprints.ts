@@ -10,11 +10,11 @@ const space = ' '.charCodeAt(0);
 const lf = '\n'.charCodeAt(0);
 const cr = '\r'.charCodeAt(0);
 const BLOCK_SIZE = 100;
-const MOD = Long.fromInt(37); //L
+const MOD = Long.fromInt(37); // L
 
 // Compute the starting point for the hash mod
 function computeFirstMod(): Long {
-    let firstMod = Long.ONE; //L
+    let firstMod = Long.ONE; // L
     for (let i = 0; i < BLOCK_SIZE; i++) {
         firstMod = firstMod.multiply(MOD);
     }
@@ -27,13 +27,13 @@ type hashCallback = (lineNumber: number, hash: string) => void;
 
 /**
  * Hash the contents of a file
- * 
+ *
  * The hash method computes a rolling hash for every line in the input. The hash is computed using the first
- * BLOCK_SIZE non-space/tab characters counted from the start of the line. For the computation of the hash all line endings
- * (i.e. \r, \n, and \r\n) are normalized to '\n'. A special value (-1) is added at the end of the file followed by
- * enough '\0' characters to ensure that there are BLOCK_SIZE characters available for computing the hashes of the
- * lines near the end of the file.
- * 
+ * BLOCK_SIZE non-space/tab characters counted from the start of the line. For the computation of the hash all
+ * line endings (i.e. \r, \n, and \r\n) are normalized to '\n'. A special value (-1) is added at the end of the
+ * file followed by enough '\0' characters to ensure that there are BLOCK_SIZE characters available for computing
+ * the hashes of the lines near the end of the file.
+ *
  * @param callback function that is called with the line number (1-based) and hash for every line
  * @param input The file's contents
  */
@@ -71,7 +71,7 @@ function hash(callback: hashCallback, input: string) {
         hashCounts[hashValue]++;
         callback(lineNumbers[index], hashValue + ":" + hashCounts[hashValue]);
         lineNumbers[index] = -1;
-    }
+    };
 
     // Update the current hash value and increment the index in the window
     const updateHash = function (current: number) {
@@ -82,7 +82,7 @@ function hash(callback: hashCallback, input: string) {
             .subtract(firstMod.multiply(Long.fromInt(begin)));
 
         index = (index + 1) % BLOCK_SIZE;
-    }
+    };
 
     // First process every character in the input, updating the hash and lineNumbers
     // as we go. Once we reach a point in the window again then we've processed

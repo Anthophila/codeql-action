@@ -137,7 +137,7 @@ async function run() {
         if (util.should_abort('init')) {
             return;
         }
-        
+
         const languages = core.getInput('languages', { required: true })
             .split(',')
             .map(x => x.trim())

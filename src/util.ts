@@ -7,10 +7,10 @@ import * as core from '@actions/core';
  * they should abort (without failing) when called on merge commit for a
  * pull request.
  */
-export function should_abort(actionName : string) : boolean {
+export function should_abort(actionName: string): boolean {
 
     const ref = process.env['GITHUB_REF'];
-    if (ref == null) {
+    if (ref === undefined) {
         core.setFailed('GITHUB_REF must be set.');
         return true;
     }

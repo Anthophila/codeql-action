@@ -19,7 +19,7 @@ function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
   // Check SARIF version
   if (combinedSarif.version === null) {
     combinedSarif.version = newSarifRuns.version;
-    core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version))
+    core.debug("Sarif version set to " + JSON.stringify(combinedSarif.version));
   } else if (combinedSarif.version !== newSarifRuns.version) {
     throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
   }
@@ -41,11 +41,11 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
           stderr: (data) => { process.stderr.write(data); }
         }
       });
-  
+
       // Set trace command
       const ext = process.platform == 'win32' ? '.cmd' : '.sh';
       const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
-  
+
       // Run trace command
       await exec.exec(codeqlCmd, ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
     }
@@ -63,7 +63,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
   let combinedSarif: SARIFFile = {
     version: null,
     runs: []
-  }
+  };
 
   const sarifFolder = path.join(resultsFolder, 'sarif');
   io.mkdirP(sarifFolder);

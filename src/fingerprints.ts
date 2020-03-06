@@ -37,7 +37,7 @@ type hashCallback = (lineNumber: number, hash: string) => void;
  * @param callback function that is called with the line number (1-based) and hash for every line
  * @param input The file's contents
  */
-function hash(callback: hashCallback, input: string) {
+export function hash(callback: hashCallback, input: string) {
     // A rolling view in to the input
     const window = Array(BLOCK_SIZE).fill(0);
 
@@ -153,6 +153,63 @@ function locationUpdateCallback(result: any, location: any): hashCallback {
     };
 }
 
+// Can we fingerprint the given location. This requires access to
+// the source file so we can hash it.
+// If possible returns a absolute file path for the source file,
+// or if not possible then returns undefined.
+export function resolveUriToFile(location: any, artifacts: any[]): string | undefined {
+    // This may be referencing an artifact
+    if (!location.uri && location.index !== undefined) {
+        if (typeof location.index !== 'number' ||
+            location.index < 0 ||
+            location.index >= artifacts.length ||
+            typeof artifacts[location.index].location !== 'object') {
+            core.debug('Ignoring location as index "' + location.index + '" is invalid');
+            return undefined;
+        }
+        location = artifacts[location.index].location;
+    }
+
+    // Get the URI and decode
+    if (typeof location.uri !== 'string') {
+        core.debug('Ignoring location as uri "' + location.uri + '" is invalid');
+        return undefined;
+    }
+    let uri = decodeURIComponent(location.uri);
+
+    // Remove a file scheme, and abort if the scheme is anything else
+    const fileUriPrefix = 'file://';
+    if (uri.startsWith(fileUriPrefix)) {
+        uri = uri.substring(fileUriPrefix.length);
+    }
+    if (uri.indexOf('://') !== -1) {
+        core.debug('Ignoring location URI "' + uri + "' as the scheme is not recognised");
+        return undefined;
+    }
+
+    // Discard any absolute paths that aren't in the src root
+    const srcRootPrefix = process.env['GITHUB_WORKSPACE'] + '/';
+    if (uri.startsWith('/') && !uri.startsWith(srcRootPrefix)) {
+        core.debug('Ignoring location URI "' + uri + "' as it is outside of the src root");
+        return undefined;
+    }
+
+    // Just assume a relative path is relative to the src root.
+    // This is not necessarily true but should be a good approximation
+    // and here we likely want to err on the side of handling more cases.
+    if (!uri.startsWith('/')) {
+        uri = srcRootPrefix + uri;
+    }
+
+    // Check the file exists
+    if (!fs.existsSync(uri)) {
+        core.debug("Unable to compute fingerprint for non-existent file: " + uri);
+        return undefined;
+    }
+
+    return uri;
+}
+
 // Compute fingerprints for results in the given sarif file
 // and return an updated sarif file contents.
 export function addFingerprints(sarifContents: string): string {
@@ -162,21 +219,21 @@ export function addFingerprints(sarifContents: string): string {
     // callbacks to accept hashes for that file and update the location
     const callbacksByFile: { [filename: string]: hashCallback[] } = {};
     for (const run of sarif.runs || []) {
+        // We may need the list of artifacts to resolve against
+        let artifacts = run.artifacts || [];
+
         for (const result of run.results || []) {
             // Check the primary location is defined correctly and is in the src root
             const primaryLocation = (result.locations || [])[0];
             if (!primaryLocation ||
                 !primaryLocation.physicalLocation ||
-                !primaryLocation.physicalLocation.artifactLocation ||
-                !primaryLocation.physicalLocation.artifactLocation.uri ||
-                primaryLocation.physicalLocation.artifactLocation.uriBaseId !== '%SRCROOT%') {
+                !primaryLocation.physicalLocation.artifactLocation) {
                 core.debug("Unable to compute fingerprint for invalid location: " + JSON.stringify(primaryLocation));
                 continue;
             }
 
-            const filepath = primaryLocation.physicalLocation.artifactLocation.uri;
-            if (!fs.existsSync(filepath)) {
-                core.warning("Unable to compute fingerprint for non-existent file: " + filepath);
+            const filepath = resolveUriToFile(primaryLocation.physicalLocation.artifactLocation, artifacts);
+            if (!filepath) {
                 continue;
             }
             if (!callbacksByFile[filepath]) {

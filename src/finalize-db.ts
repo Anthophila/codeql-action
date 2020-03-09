@@ -65,7 +65,7 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SARIFFile> {
+async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<SARIFFile> {
   const databaseFolder = path.join(resultsFolder, 'db');
 
   let combinedSarif: SARIFFile = {
@@ -83,7 +83,8 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
     await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
       '--format=sarif-latest', '--output=' + sarifFile,
       '--sarif-add-snippets',
-      database + '-lgtm.qls']);
+      database + '-lgtm.qls',
+      ...config.inRepoQueries]);
 
     let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
     appendSarifRuns(combinedSarif, sarifObject);
@@ -113,7 +114,7 @@ async function run() {
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
     core.info('Analyzing database');
-    const sarifResults = await runQueries(codeqlCmd, resultsFolder);
+    const sarifResults = await runQueries(codeqlCmd, resultsFolder, config);
     const sarifPayload = JSON.stringify(sarifResults);
 
     // Write analysis result to a file

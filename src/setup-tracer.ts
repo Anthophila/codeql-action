@@ -5,6 +5,8 @@ import * as fs from 'fs';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
+import * as configUtils from './config-utils';
+import * as yaml from 'js-yaml';
 
 type TracerConfig = {
     spec: string;
@@ -132,11 +134,59 @@ function workspaceFolder(): string {
     return workspaceFolder;
 }
 
+function initConfig(): configUtils.Config {
+    const configFile = core.getInput('config-file');
+
+    const config = new configUtils.Config();
+
+    // If no config file was provided create an empty one
+    if (configFile === '') {
+        core.debug('No configuration file was provided');
+        return config;
+    }
+    const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
+
+    if (parsedYAML.name && typeof parsedYAML.name === "string") {
+        config.name = parsedYAML.name;
+    }
+
+    const queries = parsedYAML.queries;
+    if (queries && queries instanceof Array) {
+        queries.forEach(query => {
+            if (query.uses && typeof query.uses === "string") {
+                config.queries.push(query.uses);
+            }
+        });
+    }
+
+    const pathsIgnore = parsedYAML['paths-ignore'];
+    if (pathsIgnore && queries instanceof Array) {
+        pathsIgnore.forEach(path => {
+            if (typeof path === "string") {
+                config.pathsIgnore.push(path);
+            }
+        });
+    }
+
+    const paths = parsedYAML.paths;
+    if (paths && paths instanceof Array) {
+        paths.forEach(path => {
+            if (typeof path === "string") {
+                config.paths.push(path);
+            }
+        });
+    }
+
+    return config;
+}
+
 async function run() {
     try {
         if (util.should_abort('init')) {
             return;
         }
+
+        const config = initConfig();
 
         const languages = core.getInput('languages', { required: true })
             .split(',')
@@ -206,6 +256,8 @@ async function run() {
         // TODO: make this a "private" environment variable of the action
         core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
         core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
+
+        configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
     }

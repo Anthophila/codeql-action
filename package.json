@@ -6,7 +6,8 @@
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'"
   },
   "repository": {
     "type": "git",
@@ -27,9 +28,12 @@
     "@actions/io": "^1.0.1",
     "@actions/tool-cache": "^1.1.2",
     "@types/jszip": "^3.1.6",
+    "file-url": "^3.0.0",
     "fs": "0.0.1-security",
+    "js-yaml": "^3.13.1",
     "path": "^0.12.7",
     "tmp": "^0.1.0",
+    "tslint": "^6.0.0",
     "zlib": "^1.0.5"
   },
   "devDependencies": {

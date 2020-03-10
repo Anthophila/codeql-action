@@ -8,6 +8,8 @@ import * as fs from 'fs';
 import * as sharedEnv from './shared-environment';
 
 import * as upload_lib from './upload-lib';
+import * as util from './util';
+import * as configUtils from './config-utils';
 
 interface SARIFFile {
   version: string | null;
@@ -27,28 +29,32 @@ function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
 
 async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
   // Create db for scanned languages
-  const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES] || '';
-  for (const language of scannedLanguages.split(',')) {
-    core.startGroup('Extracting ' + language);
+  const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
+  if (scannedLanguages) {
+    for (const language of scannedLanguages.split(',')) {
+      core.startGroup('Extracting ' + language);
 
-    // Get extractor location
-    let extractorPath = '';
-    await exec.exec(codeqlCmd, ['resolve', 'extractor', '--format=json', '--language=' + language], {
-      silent: true,
-      listeners: {
-        stdout: (data) => { extractorPath += data.toString(); },
-        stderr: (data) => { process.stderr.write(data); }
-      }
-    });
+      // Get extractor location
+      let extractorPath = '';
+      await exec.exec(codeqlCmd, ['resolve', 'extractor', '--format=json', '--language=' + language], {
+        silent: true,
+        listeners: {
+          stdout: (data) => { extractorPath += data.toString(); },
+          stderr: (data) => { process.stderr.write(data); }
+        }
+      });
 
-    // Set trace command
-    const ext = process.platform == 'win32' ? '.cmd' : '.sh';
-    const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
+      // Set trace command
+      const ext = process.platform === 'win32' ? '.cmd' : '.sh';
+      const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
 
-    // Run trace command
-    await exec.exec(codeqlCmd, ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
+      // Run trace command
+      await exec.exec(
+        codeqlCmd,
+        ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
 
-    core.endGroup();
+      core.endGroup();
+    }
   }
 
   const languages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES] || '';
@@ -65,7 +71,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
   let combinedSarif: SARIFFile = {
     version: null,
     runs: []
-  }
+  };
 
   const sarifFolder = path.join(resultsFolder, 'sarif');
   io.mkdirP(sarifFolder);
@@ -91,6 +97,11 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
 
 async function run() {
   try {
+    if (util.should_abort('finish')) {
+      return;
+    }
+    const config = configUtils.loadConfig();
+
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 

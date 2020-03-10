@@ -9,6 +9,9 @@ inputs:
   languages:
     description: The languages to be analysed
     required: true
+  config-file:
+    description: Path of the config file to use
+    required: false
 runs:
   using: 'node12'
   main: '../../lib/setup-tracer.js'

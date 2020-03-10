@@ -6,6 +6,8 @@ import * as fs from 'fs';
 import fileUrl from 'file-url';
 import zlib from 'zlib';
 
+import * as fingerprints from './fingerprints';
+
 export async function upload_sarif(sarifFile: string) {
     core.startGroup("Uploading results");
     try {
@@ -41,9 +43,9 @@ export async function upload_sarif(sarifFile: string) {
         }
         core.debug('analysisName: ' + analysisName);
 
-        const githubToken = core.getInput('token');
+        let sarifPayload = fs.readFileSync(sarifFile).toString();
+        sarifPayload = fingerprints.addFingerprints(sarifPayload);
 
-        const sarifPayload = fs.readFileSync(sarifFile).toString();
         const zipped_sarif = zlib.gzipSync(sarifPayload).toString('base64');
         let checkoutPath = core.getInput('checkout_path');
         let checkoutURI = fileUrl(checkoutPath);
@@ -57,6 +59,7 @@ export async function upload_sarif(sarifFile: string) {
         });
 
         core.info('Uploading results');
+        const githubToken = core.getInput('token');
         const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
         const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
         const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis';

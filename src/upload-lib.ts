@@ -1,17 +1,33 @@
 import * as core from '@actions/core';
+import * as io from '@actions/io';
 import * as http from '@actions/http-client';
 import * as auth from '@actions/http-client/auth';
 
 import * as fs from 'fs';
 import fileUrl from 'file-url';
+import md5 from 'md5';
+import * as path from 'path';
 import zlib from 'zlib';
+
+// Construct the location of the sentinel file for the given sarif file.
+// The returned location should be writable.
+async function getSentinelFilePath(sarifFile: string): Promise<string> {
+    // Use the temp dir instead of placing next to the sarif file because of
+    // issues with docker actions. The directory containing the sarif file
+    // may not be writable by us.
+    const uploadsTmpDir = path.join(process.env['RUNNER_TEMP'] || '/tmp/codeql-action', 'uploads');
+    await io.mkdirP(uploadsTmpDir);
+    // Hash the absolute path so we'll behave correctly in the unlikely
+    // scenario a file is referenced twice with different paths.
+    return path.join(uploadsTmpDir, md5(fs.realpathSync(sarifFile)));
+}
 
 export async function upload_sarif(sarifFile: string) {
     try {
         // The upload may happen in the finish or upload-sarif actions but we only want
         // the file to be uploaded once, so we create an extra file next to it to mark
         // that the file has been uploaded and should be skipped if encountered again.
-        const alreadyUploadedSentinelFile = sarifFile + '.uploaded';
+        const alreadyUploadedSentinelFile = await getSentinelFilePath(sarifFile);
         if (fs.existsSync(alreadyUploadedSentinelFile)) {
             // Already uploaded
             core.debug('Skipping upload of "' + sarifFile + '", already uploaded');

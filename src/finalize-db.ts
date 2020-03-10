@@ -69,7 +69,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
   };
 
   const sarifFolder = path.join(resultsFolder, 'sarif');
-  io.mkdirP(sarifFolder);
+  await io.mkdirP(sarifFolder);
 
   for (let database of fs.readdirSync(databaseFolder)) {
     const sarifFile = path.join(sarifFolder, database + '.sarif');
@@ -92,7 +92,7 @@ async function run() {
     console.log(process.env);
 
     if (util.should_abort('finish')) {
-        return;
+      return;
     }
     const config = configUtils.loadConfig();
 
@@ -114,7 +114,7 @@ async function run() {
 
     // Write analysis result to a file
     const outputFile = core.getInput('output_file');
-    io.mkdirP(path.dirname(outputFile));
+    await io.mkdirP(path.dirname(outputFile));
     fs.writeFileSync(outputFile, sarifPayload);
 
     core.debug('Analysis results: ');
@@ -122,7 +122,7 @@ async function run() {
     core.debug('Analysis results stored in: ' + outputFile);
 
     if ('true' === core.getInput('upload')) {
-      upload_lib.upload_sarif(outputFile);
+      await upload_lib.upload_sarif(outputFile);
     }
 
   } catch (error) {
@@ -130,4 +130,4 @@ async function run() {
   }
 }
 
-run();
+void run();

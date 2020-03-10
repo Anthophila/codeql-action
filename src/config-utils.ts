@@ -1,8 +1,7 @@
-import * as fs from 'fs';
-import * as io from '@actions/io';
-import * as path from 'path';
-
 import * as core from '@actions/core';
+import * as io from '@actions/io';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class Config {
     public name = "";

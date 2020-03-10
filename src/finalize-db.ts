@@ -1,15 +1,13 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
 
+import * as configUtils from './config-utils';
 import * as sharedEnv from './shared-environment';
-
 import * as upload_lib from './upload-lib';
 import * as util from './util';
-import * as configUtils from './config-utils';
 
 interface SARIFFile {
   version: string | null;
@@ -92,7 +90,7 @@ async function run() {
     console.log(process.env);
 
     if (util.should_abort('finish')) {
-        return;
+      return;
     }
     const config = configUtils.loadConfig();
 

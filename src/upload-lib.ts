@@ -1,9 +1,8 @@
 import * as core from '@actions/core';
 import * as http from '@actions/http-client';
 import * as auth from '@actions/http-client/auth';
-
-import * as fs from 'fs';
 import fileUrl from 'file-url';
+import * as fs from 'fs';
 import zlib from 'zlib';
 
 export async function upload_sarif(sarifFile: string) {

@@ -70,8 +70,7 @@ export async function upload_sarif(sarifFile: string) {
             core.error('Upload failed: ' + await res.readBody());
         } else if (res.message.statusCode !== 202) {
             core.setFailed('Upload failed: ' + await res.readBody());
-        }
-        else {
+        } else {
             core.info("Successfully uploaded results");
         }
 

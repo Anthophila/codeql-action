@@ -41,7 +41,14 @@ export class Config {
         }
 
         const ref = tok[1];
-        tok = tok[0].split('/', 3);
+        tok = tok[0].split('/');
+        // The first token is the owner
+        // The second token is the repo
+        // The rest is a path, if there is more than one token combine them to form the full path
+        if (tok.length > 3) {
+            tok = [tok[0], tok[1], tok.slice(2).join('/')];
+        }
+
         if (tok.length < 2) {
             throw '"uses" value for queries must be a path, or owner/repo@ref \n Found: ' + queryUses;
         }

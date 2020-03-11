@@ -146,38 +146,38 @@ function initConfig(): configUtils.Config {
     }
 
     try {
-    const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
+        const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
 
-    if (parsedYAML.name && typeof parsedYAML.name === "string") {
-        config.name = parsedYAML.name;
-    }
+        if (parsedYAML.name && typeof parsedYAML.name === "string") {
+            config.name = parsedYAML.name;
+        }
 
-    const queries = parsedYAML.queries;
-    if (queries && queries instanceof Array) {
-        queries.forEach(query => {
-            if (query.uses && typeof query.uses === "string") {
-                config.addQuery(query.uses);
-            }
-        });
-    }
+        const queries = parsedYAML.queries;
+        if (queries && queries instanceof Array) {
+            queries.forEach(query => {
+                if (query.uses && typeof query.uses === "string") {
+                    config.addQuery(query.uses);
+                }
+            });
+        }
 
-    const pathsIgnore = parsedYAML['paths-ignore'];
-    if (pathsIgnore && queries instanceof Array) {
-        pathsIgnore.forEach(path => {
-            if (typeof path === "string") {
-                config.pathsIgnore.push(path);
-            }
-        });
-    }
+        const pathsIgnore = parsedYAML['paths-ignore'];
+        if (pathsIgnore && queries instanceof Array) {
+            pathsIgnore.forEach(path => {
+                if (typeof path === "string") {
+                    config.pathsIgnore.push(path);
+                }
+            });
+        }
 
-    const paths = parsedYAML.paths;
-    if (paths && paths instanceof Array) {
-        paths.forEach(path => {
-            if (typeof path === "string") {
-                config.paths.push(path);
-            }
-        });
-    }
+        const paths = parsedYAML.paths;
+        if (paths && paths instanceof Array) {
+            paths.forEach(path => {
+                if (typeof path === "string") {
+                    config.paths.push(path);
+                }
+            });
+        }
     } catch (err) {
         core.setFailed(err);
     }

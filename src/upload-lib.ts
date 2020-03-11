@@ -22,11 +22,14 @@ export async function upload_sarif(sarifFile: string) {
         }
 
         const commitOid = get_required_env_param('GITHUB_SHA');
-        const workflowRunID = get_required_env_param('GITHUB_RUN_ID');
+        const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
         const ref = get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
         const analysisName = get_required_env_param('GITHUB_WORKFLOW');
 
-        if (commitOid == null || workflowRunID == null || ref == null || analysisName == null) {
+        if (commitOid === undefined
+             || workflowRunIDStr === undefined
+             || ref === undefined
+             || analysisName === undefined) {
             return;
         }
 
@@ -36,13 +39,19 @@ export async function upload_sarif(sarifFile: string) {
         const zipped_sarif = zlib.gzipSync(sarifPayload).toString('base64');
         let checkoutPath = core.getInput('checkout_path');
         let checkoutURI = fileUrl(checkoutPath);
+        const workflowRunID = parseInt(workflowRunIDStr, 10);
+
+        if (Number.isNaN(workflowRunID)) {
+            core.setFailed('GITHUB_RUN_ID must define a non NaN workflow run ID');
+            return;
+        }
 
         const payload = JSON.stringify({
             "commit_oid": commitOid,
             "ref": ref,
             "analysis_name": analysisName,
             "sarif": zipped_sarif,
-            "workflow_run_id": parseInt(workflowRunID),
+            "workflow_run_id": workflowRunID,
             "checkout_uri": checkoutURI,
         });
 
@@ -75,7 +84,7 @@ export async function upload_sarif(sarifFile: string) {
 }
 
 // Get an environment parameter, and fail the action if it has no value
-function get_required_env_param(paramName: string) : string | undefined {
+function get_required_env_param(paramName: string): string | undefined {
     const value = process.env[paramName];
     if (value === undefined) {
         core.setFailed(paramName + ' environment variable must be set');

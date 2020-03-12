@@ -16,7 +16,7 @@ export class ExternalQuery {
 
 export class Config {
     public name = "";
-    public inRepoQueries: string[] = [];
+    public additionalQueries: string[] = [];
     public externalQueries: ExternalQuery[] = [];
     public pathsIgnore: string[] = [];
     public paths: string[] = [];
@@ -30,7 +30,7 @@ export class Config {
         }
 
         if (queryUses.startsWith("./")) {
-            this.inRepoQueries.push(queryUses.slice(2));
+            this.additionalQueries.push(queryUses.slice(2));
             return;
         }
 

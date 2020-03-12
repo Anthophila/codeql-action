@@ -63,6 +63,21 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
+async function checkoutExternalQueries(config: configUtils.Config) {
+  const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
+
+  for (const externalQuery of config.externalQueries) {
+    core.info('Checking out ' + externalQuery.repository);
+
+    const checkoutLocation = path.join(folder, externalQuery.repository);
+    const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
+    await exec.exec('git', ['clone', repoURL, checkoutLocation]);
+    await exec.exec('git', ['checkout', externalQuery.ref]);
+
+    config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));
+  }
+}
+
 async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<SARIFFile> {
   const databaseFolder = path.join(resultsFolder, 'db');
 
@@ -82,7 +97,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
       '--format=sarif-latest', '--output=' + sarifFile,
       '--no-sarif-add-snippets',
       database + '-lgtm.qls',
-      ...config.inRepoQueries]);
+      ...config.additionalQueries]);
 
     let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
     appendSarifRuns(combinedSarif, sarifObject);
@@ -110,6 +125,8 @@ async function run() {
 
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
+
+    await checkoutExternalQueries(config);
 
     core.info('Analyzing database');
     const sarifResults = await runQueries(codeqlCmd, resultsFolder, config);

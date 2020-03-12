@@ -82,7 +82,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
     const sarifFile = path.join(sarifFolder, database + '.sarif');
     await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
       '--format=sarif-latest', '--output=' + sarifFile,
-      '--sarif-add-snippets',
+      '--no-sarif-add-snippets',
       database + '-lgtm.qls']);
 
     let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));

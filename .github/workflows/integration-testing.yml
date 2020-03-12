@@ -15,11 +15,11 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.CODEQL_TESTING_TOKEN }}" \
           -H "Accept: application/vnd.github.everest-preview+json" \
           https://api.github.com/repos/Anthophila/amazon-cognito-js-copy/dispatches \
-          -D '{"event_type":"codeql-integration","client_payload": {"sha": "${{ github.sha }}"}}'
+          -d '{"event_type":"codeql-integration","client_payload": {"sha": "${{ github.sha }}"}}'
     - name: Create check runs
       run: |
         curl -X POST \
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -H "Accept: application/vnd.github.antiope-preview+json" \
           https://api.github.com/repos/github/codeql-action/check-runs \
-          -D '{"name": "Integration Test Results", "head_sha": "${{ github.sha }}"}'
+          -d '{"name": "Integration Test Results", "head_sha": "${{ github.sha }}"}'

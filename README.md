@@ -8,7 +8,7 @@ name: "CodeQL analysis"
 on: 
   push:
   schedule:
-    - cron: '0 0 */7 * *'
+    - cron: '0 0 * * 0'
 
 jobs:
   codeql:

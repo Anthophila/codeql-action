@@ -13,9 +13,9 @@ export class Config {
 
 const configFolder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
 
-export function saveConfig(config: Config) {
+export async function saveConfig(config: Config) {
     const configString = JSON.stringify(config);
-    io.mkdirP(configFolder);
+    await io.mkdirP(configFolder);
     fs.writeFileSync(path.join(configFolder, 'config'), configString, 'utf8');
     core.debug('Saved config:');
     core.debug(configString);

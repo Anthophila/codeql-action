@@ -258,10 +258,10 @@ async function run() {
         core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
         core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
 
-        configUtils.saveConfig(config);
+        await configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
     }
 }
 
-run();
+void run();

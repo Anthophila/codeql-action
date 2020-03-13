@@ -19,4 +19,4 @@ async function run() {
     await upload_lib.upload_sarif(sarifFile);
 }
 
-run();
+void run();

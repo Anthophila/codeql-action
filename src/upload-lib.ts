@@ -26,9 +26,9 @@ export async function upload_sarif(sarifFile: string) {
         const analysisName = get_required_env_param('GITHUB_WORKFLOW');
 
         if (commitOid === undefined
-             || workflowRunIDStr === undefined
-             || ref === undefined
-             || analysisName === undefined) {
+            || workflowRunIDStr === undefined
+            || ref === undefined
+            || analysisName === undefined) {
             return;
         }
 
@@ -45,6 +45,11 @@ export async function upload_sarif(sarifFile: string) {
             return;
         }
 
+        let matrix: string | undefined = core.getInput('matrix');
+        if (matrix === "null" || matrix === "") {
+            matrix = undefined;
+        }
+
         const payload = JSON.stringify({
             "commit_oid": commitOid,
             "ref": ref,
@@ -52,6 +57,7 @@ export async function upload_sarif(sarifFile: string) {
             "sarif": zipped_sarif,
             "workflow_run_id": workflowRunID,
             "checkout_uri": checkoutURI,
+            "environment": matrix,
         });
 
         core.info('Uploading results');

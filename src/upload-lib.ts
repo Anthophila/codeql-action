@@ -7,6 +7,7 @@ import fileUrl from 'file-url';
 import zlib from 'zlib';
 
 import * as fingerprints from './fingerprints';
+import * as util from './util';
 
 export async function upload_sarif(sarifFile: string) {
     core.startGroup("Uploading results");
@@ -21,10 +22,10 @@ export async function upload_sarif(sarifFile: string) {
             return;
         }
 
-        const commitOid = get_required_env_param('GITHUB_SHA');
-        const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
-        const ref = get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
-        const analysisName = get_required_env_param('GITHUB_WORKFLOW');
+        const commitOid = util.get_required_env_param('GITHUB_SHA');
+        const workflowRunIDStr = util.get_required_env_param('GITHUB_RUN_ID');
+        const ref = util.get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
+        const analysisName = util.get_required_env_param('GITHUB_WORKFLOW');
 
         if (commitOid === undefined
              || workflowRunIDStr === undefined
@@ -81,14 +82,4 @@ export async function upload_sarif(sarifFile: string) {
         core.setFailed(error.message);
     }
     core.endGroup();
-}
-
-// Get an environment parameter, and fail the action if it has no value
-function get_required_env_param(paramName: string): string | undefined {
-    const value = process.env[paramName];
-    if (value === undefined) {
-        core.setFailed(paramName + ' environment variable must be set');
-    }
-    core.debug(paramName + '=' + value);
-    return value;
 }

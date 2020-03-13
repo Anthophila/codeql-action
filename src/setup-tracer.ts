@@ -102,8 +102,8 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
         totalLines.push(...lines.slice(2));
     }
 
-    const newLogFilePath = path.resolve(workspaceFolder(), 'compound-build-tracer.log');
-    const spec = path.resolve(workspaceFolder(), 'compound-spec');
+    const newLogFilePath = path.resolve(util.workspaceFolder(), 'compound-build-tracer.log');
+    const spec = path.resolve(util.workspaceFolder(), 'compound-spec');
     const newSpecContent = [newLogFilePath, totalCount.toString(10), ...totalLines];
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
@@ -124,14 +124,6 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     fs.writeFileSync(envPath, buffer);
 
     return { env, spec };
-}
-
-function workspaceFolder(): string {
-    let workspaceFolder = process.env['RUNNER_WORKSPACE'];
-    if (!workspaceFolder)
-        workspaceFolder = path.resolve('..');
-
-    return workspaceFolder;
 }
 
 function initConfig(): configUtils.Config {
@@ -182,7 +174,7 @@ function initConfig(): configUtils.Config {
 
 async function run() {
     try {
-        if (util.should_abort('init')) {
+        if (util.should_abort('init') || !util.reportInitStarting()) {
             return;
         }
 
@@ -207,7 +199,7 @@ async function run() {
             core.warning("Passing the GOFLAGS env parameter to the codeql/init action is deprecated. Please move this to the codeql/finish action.");
         }
 
-        const codeqlResultFolder = path.resolve(workspaceFolder(), 'codeql_results');
+        const codeqlResultFolder = path.resolve(util.workspaceFolder(), 'codeql_results');
         const databaseFolder = path.resolve(codeqlResultFolder, 'db');
 
         let tracedLanguages: { [key: string]: TracerConfig } = {};

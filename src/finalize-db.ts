@@ -1,15 +1,13 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
 
+import * as configUtils from './config-utils';
 import * as sharedEnv from './shared-environment';
-
 import * as upload_lib from './upload-lib';
 import * as util from './util';
-import * as configUtils from './config-utils';
 
 interface SARIFFile {
   version: string | null;
@@ -74,7 +72,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
   };
 
   const sarifFolder = path.join(resultsFolder, 'sarif');
-  io.mkdirP(sarifFolder);
+  await io.mkdirP(sarifFolder);
 
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);
@@ -82,7 +80,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
     const sarifFile = path.join(sarifFolder, database + '.sarif');
     await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
       '--format=sarif-latest', '--output=' + sarifFile,
-      '--sarif-add-snippets',
+      '--no-sarif-add-snippets',
       database + '-lgtm.qls',
       ...config.inRepoQueries]);
 
@@ -119,11 +117,11 @@ async function run() {
 
     // Write analysis result to a file
     const outputFile = core.getInput('output_file');
-    io.mkdirP(path.dirname(outputFile));
+    await io.mkdirP(path.dirname(outputFile));
     fs.writeFileSync(outputFile, sarifPayload);
 
     if ('true' === core.getInput('upload')) {
-      upload_lib.upload_sarif(outputFile);
+      await upload_lib.upload_sarif(outputFile);
     }
 
   } catch (error) {
@@ -131,4 +129,4 @@ async function run() {
   }
 }
 
-run();
+void run();

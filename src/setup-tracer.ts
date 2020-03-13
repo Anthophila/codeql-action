@@ -1,12 +1,13 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as yaml from 'js-yaml';
+import * as path from 'path';
+
+import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
-import * as configUtils from './config-utils';
-import * as yaml from 'js-yaml';
 
 type TracerConfig = {
     spec: string;
@@ -262,10 +263,10 @@ async function run() {
         core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
         core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
 
-        configUtils.saveConfig(config);
+        await configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
     }
 }
 
-run();
+void run();

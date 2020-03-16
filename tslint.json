@@ -78,6 +78,7 @@
         "no-duplicate-variable": true,
         "no-empty": true,
         "no-eval": true,
+        "no-floating-promises": true,
         "no-inferrable-types": true,
         "no-internal-module": true,
         "no-require-imports": false,
@@ -95,6 +96,12 @@
             "check-else",
             "check-finally",
             "check-whitespace"
+        ],
+        "ordered-imports": [
+            true,
+            {
+                "grouped-imports": true
+            }
         ],
         "quotemark": [
             false

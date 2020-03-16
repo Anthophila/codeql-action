@@ -97,7 +97,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
 
 async function run() {
   try {
-    if (util.should_abort('finish') || !util.reportActionStarting('finish')) {
+    if (util.should_abort('finish') || !await util.reportActionStarting('finish')) {
       return;
     }
     const config = configUtils.loadConfig();
@@ -127,11 +127,11 @@ async function run() {
 
   } catch (error) {
     core.setFailed(error.message);
-    util.reportActionFailed('finish', 'unspecified');
+    await util.reportActionFailed('finish', 'unspecified');
     return;
   }
 
-  util.reportActionSucceeded('finish');
+  await util.reportActionSucceeded('finish');
 }
 
 void run();

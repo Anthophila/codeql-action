@@ -10,7 +10,7 @@ import * as util from './util';
 import * as configUtils from './config-utils';
 
 async function run() {
-    if (util.should_abort('upload-sarif') || !util.reportActionStarting('upload-sarif')) {
+    if (util.should_abort('upload-sarif') || !await util.reportActionStarting('upload-sarif')) {
         return;
     }
 
@@ -21,11 +21,11 @@ async function run() {
         await upload_lib.upload_sarif(sarifFile);
     } catch (error) {
         core.setFailed(error.message);
-        util.reportActionFailed('upload-sarif', 'unspecified');
+        await util.reportActionFailed('upload-sarif', 'unspecified');
         return;
     }
 
-    util.reportActionSucceeded('upload-sarif');
+    await util.reportActionSucceeded('upload-sarif');
 }
 
 void run();

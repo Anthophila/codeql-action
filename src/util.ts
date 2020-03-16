@@ -3,6 +3,8 @@ import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 import { resolveUriToFile } from './fingerprints';
+import * as http from '@actions/http-client';
+import * as auth from '@actions/http-client/auth';
 
 /**
  * Should the current action be aborted?
@@ -179,12 +181,20 @@ function getStatusReport(
 /**
  * Send a status report to the code_scanning/analysis/status endpoint.
  */
-function sendStatusReport(statusReport: StatusReport | undefined) {
+async function sendStatusReport(statusReport: StatusReport | undefined) {
     if (statusReport) {
         const statusReportJSON = JSON.stringify(statusReport);
 
         core.debug(statusReportJSON);
-        // TODO actually post status report to dotcom
+        // TODO actually post status report to dotcom:
+        /*
+        const githubToken = core.getInput('token');
+        const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
+        const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
+        const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
+                    + '/code_scanning/analysis/status';
+        const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
+        */
     }
 
 }
@@ -197,7 +207,7 @@ function sendStatusReport(statusReport: StatusReport | undefined) {
  *
  * Returns true unless a problem occurred and the action should abort.
  */
-export function reportActionStarting(action: string): boolean {
+export async function reportActionStarting(action: string): Promise<boolean> {
     let startedAt = new Date();
     let languages: string;
     if (action === 'init') {
@@ -212,7 +222,7 @@ export function reportActionStarting(action: string): boolean {
         return false;
     }
 
-    sendStatusReport(statusReport);
+    await sendStatusReport(statusReport);
 
     return true;
 }
@@ -223,8 +233,8 @@ export function reportActionStarting(action: string): boolean {
  * Note that the started_at date is always that of the `init` action, since
  * this is likely to give a more useful duration when inspecting events.
  */
-export function reportActionFailed(action: string, cause?: string, exception?: string) {
-    sendStatusReport(
+export async function reportActionFailed(action: string, cause?: string, exception?: string) {
+    await sendStatusReport(
         getStatusReport(action, 'failure', readInitStartedDate(), readAnalysedLanguages(), cause, exception));
 }
 
@@ -234,6 +244,6 @@ export function reportActionFailed(action: string, cause?: string, exception?: s
  * Note that the started_at date is always that of the `init` action, since
  * this is likely to give a more useful duration when inspecting events.
  */
-export function reportActionSucceeded(action: string) {
-    sendStatusReport(getStatusReport(action, 'success', readInitStartedDate(), readAnalysedLanguages()));
+export async function reportActionSucceeded(action: string) {
+    await sendStatusReport(getStatusReport(action, 'success', readInitStartedDate(), readAnalysedLanguages()));
 }

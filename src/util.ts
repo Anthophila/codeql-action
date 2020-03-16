@@ -142,9 +142,11 @@ function getStatusReport(
     const commitOid = get_required_env_param('GITHUB_SHA');
     const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
     const workflowName = get_required_env_param('GITHUB_WORKFLOW');
+    const jobName = get_required_env_param('GITHUB_JOB');
     if (workflowRunIDStr === undefined
         || workflowName === undefined
-        || commitOid === undefined) {
+        || commitOid === undefined
+        || jobName === undefined) {
         return;
     }
     const workflowRunID = parseInt(workflowRunIDStr, 10);
@@ -153,7 +155,7 @@ function getStatusReport(
     let statusReport: StatusReport = {
         workflow_run_id: workflowRunID,
         workflow_name: workflowName,
-        job_name: "unknown", // TODO get the job name in here
+        job_name: jobName,
         languages: languages,
         commit_oid: commitOid,
         action_name: actionName,

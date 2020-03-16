@@ -252,7 +252,10 @@ async function run() {
         await configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
+        util.reportInitFailed("unspecified");
+        return;
     }
+    util.reportInitSucceeded();
 }
 
 void run();

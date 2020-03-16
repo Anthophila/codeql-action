@@ -131,18 +131,11 @@ interface StatusReport {
 function getStatusReport(
     actionName: string,
     status: string,
-    startedAt?: Date,
-    languages?: string,
+    startedAt: Date,
+    languages: string,
     cause?: string,
     exception?: string):
     StatusReport | undefined {
-
-    if (!startedAt) {
-        startedAt = readInitStartedDate();
-    }
-    if (!languages) {
-        languages = readAnalysedLanguages();
-    }
 
     const commitOid = get_required_env_param('GITHUB_SHA');
     const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
@@ -178,9 +171,22 @@ function getStatusReport(
         statusReport.completed_at = new Date().toISOString();
     }
 
-    // TODO add matrix vars if defined
+    // TODO add matrix vars if defined (from action parameter following robert's PR)
 
     return statusReport;
+}
+
+/**
+ * Send a status report to the code_scanning/analysis/status endpoint.
+ */
+function sendStatusReport(statusReport: StatusReport | undefined) {
+    if (statusReport) {
+        const statusReportJSON = JSON.stringify(statusReport);
+
+        core.debug(statusReportJSON);
+        // TODO actually post status report to dotcom
+    }
+
 }
 
 /**
@@ -196,11 +202,17 @@ export function reportInitStarting(): boolean {
     if (!statusReport) {
         return false;
     }
-    const statusReportJSON = JSON.stringify(statusReport);
 
-    core.debug(statusReportJSON);
-
-    // TODO post status report to dotcom
+    sendStatusReport(statusReport);
 
     return true;
+}
+
+export function reportInitFailed(cause?: string, exception?: string) {
+    sendStatusReport(
+        getStatusReport('init', 'failure', readInitStartedDate(), readAnalysedLanguages(), cause, exception));
+}
+
+export function reportInitSucceeded() {
+    sendStatusReport(getStatusReport('init', 'success', readInitStartedDate(), readAnalysedLanguages()));
 }

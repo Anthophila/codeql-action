@@ -174,7 +174,7 @@ function initConfig(): configUtils.Config {
 
 async function run() {
     try {
-        if (util.should_abort('init') || !util.reportInitStarting()) {
+        if (util.should_abort('init') || !util.reportActionStarting('init')) {
             return;
         }
 
@@ -252,10 +252,10 @@ async function run() {
         await configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
-        util.reportInitFailed("unspecified");
+        util.reportActionFailed('init', 'unspecified');
         return;
     }
-    util.reportInitSucceeded();
+    util.reportActionSucceeded('init');
 }
 
 void run();

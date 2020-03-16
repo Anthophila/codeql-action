@@ -190,15 +190,24 @@ function sendStatusReport(statusReport: StatusReport | undefined) {
 }
 
 /**
- * Send a status report that the init action is starting.
+ * Send a status report that an action is starting.
  *
- * This also records the start time and analysed languages in the workspace,
- * for retrieval when posting later status reports.
+ * If the action is `init` then this also records the start time and analysed
+ * languages in the workspace, for retrieval when posting later status reports.
  *
  * Returns true unless a problem occurred and the action should abort.
  */
-export function reportInitStarting(): boolean {
-    const statusReport = getStatusReport('init', 'starting', writeInitStartedDate(), writeAnalysedLanguages());
+export function reportActionStarting(action: string): boolean {
+    let startedAt = new Date();
+    let languages: string;
+    if (action === 'init') {
+        startedAt = writeInitStartedDate();
+        languages = writeAnalysedLanguages();
+    } else {
+        languages = readAnalysedLanguages();
+    }
+
+    const statusReport = getStatusReport(action, 'starting', startedAt, languages);
     if (!statusReport) {
         return false;
     }
@@ -208,11 +217,23 @@ export function reportInitStarting(): boolean {
     return true;
 }
 
-export function reportInitFailed(cause?: string, exception?: string) {
+/**
+ * Report that an action has failed.
+ *
+ * Note that the started_at date is always that of the `init` action, since
+ * this is likely to give a more useful duration when inspecting events.
+ */
+export function reportActionFailed(action: string, cause?: string, exception?: string) {
     sendStatusReport(
-        getStatusReport('init', 'failure', readInitStartedDate(), readAnalysedLanguages(), cause, exception));
+        getStatusReport(action, 'failure', readInitStartedDate(), readAnalysedLanguages(), cause, exception));
 }
 
-export function reportInitSucceeded() {
-    sendStatusReport(getStatusReport('init', 'success', readInitStartedDate(), readAnalysedLanguages()));
+/**
+ * Report that an action has succeeded.
+ *
+ * Note that the started_at date is always that of the `init` action, since
+ * this is likely to give a more useful duration when inspecting events.
+ */
+export function reportActionSucceeded(action: string) {
+    sendStatusReport(getStatusReport(action, 'success', readInitStartedDate(), readAnalysedLanguages()));
 }

@@ -1,12 +1,13 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as yaml from 'js-yaml';
+import * as path from 'path';
+
+import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
-import * as configUtils from './config-utils';
-import * as yaml from 'js-yaml';
 
 type TracerConfig = {
     spec: string;
@@ -144,37 +145,42 @@ function initConfig(): configUtils.Config {
         core.debug('No configuration file was provided');
         return config;
     }
-    const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
 
-    if (parsedYAML.name && typeof parsedYAML.name === "string") {
-        config.name = parsedYAML.name;
-    }
+    try {
+        const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
 
-    const queries = parsedYAML.queries;
-    if (queries && queries instanceof Array) {
-        queries.forEach(query => {
-            if (query.uses && typeof query.uses === "string") {
-                config.queries.push(query.uses);
-            }
-        });
-    }
+        if (parsedYAML.name && typeof parsedYAML.name === "string") {
+            config.name = parsedYAML.name;
+        }
 
-    const pathsIgnore = parsedYAML['paths-ignore'];
-    if (pathsIgnore && queries instanceof Array) {
-        pathsIgnore.forEach(path => {
-            if (typeof path === "string") {
-                config.pathsIgnore.push(path);
-            }
-        });
-    }
+        const queries = parsedYAML.queries;
+        if (queries && queries instanceof Array) {
+            queries.forEach(query => {
+                if (query.uses && typeof query.uses === "string") {
+                    config.addQuery(query.uses);
+                }
+            });
+        }
 
-    const paths = parsedYAML.paths;
-    if (paths && paths instanceof Array) {
-        paths.forEach(path => {
-            if (typeof path === "string") {
-                config.paths.push(path);
-            }
-        });
+        const pathsIgnore = parsedYAML['paths-ignore'];
+        if (pathsIgnore && queries instanceof Array) {
+            pathsIgnore.forEach(path => {
+                if (typeof path === "string") {
+                    config.pathsIgnore.push(path);
+                }
+            });
+        }
+
+        const paths = parsedYAML.paths;
+        if (paths && paths instanceof Array) {
+            paths.forEach(path => {
+                if (typeof path === "string") {
+                    config.paths.push(path);
+                }
+            });
+        }
+    } catch (err) {
+        core.setFailed(err);
     }
 
     return config;
@@ -257,10 +263,10 @@ async function run() {
         core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
         core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
 
-        configUtils.saveConfig(config);
+        await configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
     }
 }
 
-run();
+void run();

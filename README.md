@@ -5,10 +5,13 @@ To get Code Scanning results from CodeQL analysis on your repo you can use the f
 ```yaml
 name: "CodeQL analysis"
 
-on: [push]
+on: 
+  push:
+  schedule:
+    - cron: '0 0 * * 0'
 
 jobs:
-  build:
+  codeql:
 
     strategy:
       fail-fast: false

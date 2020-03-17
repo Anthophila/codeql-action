@@ -1,9 +1,7 @@
 import * as core from '@actions/core';
-
+import { defaultCoreCipherList } from "constants";
 import * as fs from 'fs';
 import Long from 'long';
-
-import { defaultCoreCipherList } from "constants";
 
 const tab = '\t'.charCodeAt(0);
 const space = ' '.charCodeAt(0);

@@ -1,15 +1,13 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as io from '@actions/io';
-
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
 
+import * as configUtils from './config-utils';
 import * as sharedEnv from './shared-environment';
-
 import * as upload_lib from './upload-lib';
 import * as util from './util';
-import * as configUtils from './config-utils';
 
 interface SARIFFile {
   version: string | null;
@@ -65,7 +63,7 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SARIFFile> {
+async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<SARIFFile> {
   const databaseFolder = path.join(resultsFolder, 'db');
 
   let combinedSarif: SARIFFile = {
@@ -83,7 +81,8 @@ async function runQueries(codeqlCmd: string, resultsFolder: string): Promise<SAR
     await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
       '--format=sarif-latest', '--output=' + sarifFile,
       '--no-sarif-add-snippets',
-      database + '-lgtm.qls']);
+      database + '-lgtm.qls',
+      ...config.inRepoQueries]);
 
     let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
     appendSarifRuns(combinedSarif, sarifObject);
@@ -100,7 +99,7 @@ async function run() {
     if (util.should_abort('finish') || !await util.reportActionStarting('finish')) {
       return;
     }
-    const config = configUtils.loadConfig();
+    const config = await configUtils.loadConfig();
 
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
@@ -113,7 +112,7 @@ async function run() {
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
     core.info('Analyzing database');
-    const sarifResults = await runQueries(codeqlCmd, resultsFolder);
+    const sarifResults = await runQueries(codeqlCmd, resultsFolder, config);
     const sarifPayload = JSON.stringify(sarifResults);
 
     // Write analysis result to a file

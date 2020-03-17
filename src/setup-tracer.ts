@@ -1,12 +1,12 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
+
+import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
-import * as configUtils from './config-utils';
-import * as yaml from 'js-yaml';
 
 type TracerConfig = {
     spec: string;
@@ -126,59 +126,13 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     return { env, spec };
 }
 
-function initConfig(): configUtils.Config {
-    const configFile = core.getInput('config-file');
-
-    const config = new configUtils.Config();
-
-    // If no config file was provided create an empty one
-    if (configFile === '') {
-        core.debug('No configuration file was provided');
-        return config;
-    }
-    const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
-
-    if (parsedYAML.name && typeof parsedYAML.name === "string") {
-        config.name = parsedYAML.name;
-    }
-
-    const queries = parsedYAML.queries;
-    if (queries && queries instanceof Array) {
-        queries.forEach(query => {
-            if (query.uses && typeof query.uses === "string") {
-                config.queries.push(query.uses);
-            }
-        });
-    }
-
-    const pathsIgnore = parsedYAML['paths-ignore'];
-    if (pathsIgnore && queries instanceof Array) {
-        pathsIgnore.forEach(path => {
-            if (typeof path === "string") {
-                config.pathsIgnore.push(path);
-            }
-        });
-    }
-
-    const paths = parsedYAML.paths;
-    if (paths && paths instanceof Array) {
-        paths.forEach(path => {
-            if (typeof path === "string") {
-                config.paths.push(path);
-            }
-        });
-    }
-
-    return config;
-}
-
 async function run() {
     try {
         if (util.should_abort('init') || !await util.reportActionStarting('init')) {
             return;
         }
 
-        const config = initConfig();
+        const config = await configUtils.loadConfig();
 
         const languages = core.getInput('languages', { required: true })
             .split(',')
@@ -249,7 +203,6 @@ async function run() {
         core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
         core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
 
-        await configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
         await util.reportActionFailed('init', 'unspecified');

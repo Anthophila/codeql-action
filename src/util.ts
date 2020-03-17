@@ -194,7 +194,7 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
         const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
         const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
         const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
-                    + '/code_scanning/analysis/status';
+                    + '/code-scanning/analysis/status';
         const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
         */
     }

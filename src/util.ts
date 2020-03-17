@@ -1,10 +1,6 @@
 import * as core from '@actions/core';
-import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
-import { resolveUriToFile } from './fingerprints';
-import * as http from '@actions/http-client';
-import * as auth from '@actions/http-client/auth';
 
 /**
  * Should the current action be aborted?

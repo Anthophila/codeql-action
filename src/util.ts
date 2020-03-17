@@ -170,6 +170,10 @@ function getStatusReport(
     if (status === 'success' || status === 'failure') {
         statusReport.completed_at = new Date().toISOString();
     }
+    let matrix: string | undefined = core.getInput('matrix');
+    if (matrix) {
+        statusReport.matrix_vars = matrix;
+    }
 
     // TODO add matrix vars if defined (from action parameter following robert's PR)
 

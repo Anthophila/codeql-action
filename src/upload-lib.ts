@@ -64,7 +64,7 @@ export async function upload_sarif(sarifFile: string) {
         const githubToken = core.getInput('token');
         const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
         const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
-        const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code_scanning/analysis';
+        const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code-scanning/analysis';
         const res: http.HttpClientResponse = await client.put(url, payload);
 
         core.debug('response status: ' + res.message.statusCode);

@@ -31,7 +31,7 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   if (scannedLanguages) {
     for (const language of scannedLanguages.split(',')) {
       //If the path exists, then a database has already been built by autobuild.
-      if (!fs.existsSync(path.join(databaseFolder, language))) {
+      if (!fs.existsSync(path.join(databaseFolder, language, "db-" + language))) {
         core.startGroup('Extracting ' + language);
 
         // Get extractor location
@@ -61,7 +61,7 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   const languages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES] || '';
   for (const language of languages.split(',')) {
     //If the path exists, then a database has already been built by autobuild.
-    if (!fs.existsSync(path.join(databaseFolder, language))) {
+    if (!fs.existsSync(path.join(databaseFolder, language, "db-" + language))) {
       core.startGroup('Finalizing ' + language);
       await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
       core.endGroup();

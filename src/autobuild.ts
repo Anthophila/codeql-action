@@ -32,8 +32,8 @@ async function autobuild(codeqlCmd: string, databaseFolder: string) {
     for (const language of scannedLanguages.split(',')) {
       core.startGroup('Autobuilding ' + language);
 
-      if (language == "javascript" || language == "python" || language == "go") {
-        core.info(language + " does not require any additional build steps. ")
+      if (language === "javascript" || language === "python" || language === "go") {
+        core.info(language + " does not require any additional build steps. ");
       } else {
 
         // Get extractor location

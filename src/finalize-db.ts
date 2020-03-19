@@ -42,15 +42,17 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
         }
       });
 
-      // Set trace command
-      const ext = process.platform === 'win32' ? '.cmd' : '.sh';
-      const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
+      //If the path exists, then a database has already been built by autobuild.
+      if (!fs.existsSync(path.join(databaseFolder, language))) {
+        // Set trace command
+        const ext = process.platform === 'win32' ? '.cmd' : '.sh';
+        const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
 
-      // Run trace command
-      await exec.exec(
-        codeqlCmd,
-        ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
-
+        // Run trace command
+        await exec.exec(
+          codeqlCmd,
+          ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
+        }
       core.endGroup();
     }
   }

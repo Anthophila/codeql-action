@@ -30,20 +30,20 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
   if (scannedLanguages) {
     for (const language of scannedLanguages.split(',')) {
-      core.startGroup('Extracting ' + language);
-
-      // Get extractor location
-      let extractorPath = '';
-      await exec.exec(codeqlCmd, ['resolve', 'extractor', '--format=json', '--language=' + language], {
-        silent: true,
-        listeners: {
-          stdout: (data) => { extractorPath += data.toString(); },
-          stderr: (data) => { process.stderr.write(data); }
-        }
-      });
-
       //If the path exists, then a database has already been built by autobuild.
       if (!fs.existsSync(path.join(databaseFolder, language))) {
+        core.startGroup('Extracting ' + language);
+
+        // Get extractor location
+        let extractorPath = '';
+        await exec.exec(codeqlCmd, ['resolve', 'extractor', '--format=json', '--language=' + language], {
+          silent: true,
+          listeners: {
+            stdout: (data) => { extractorPath += data.toString(); },
+            stderr: (data) => { process.stderr.write(data); }
+          }
+        });
+      
         // Set trace command
         const ext = process.platform === 'win32' ? '.cmd' : '.sh';
         const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
@@ -52,16 +52,20 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
         await exec.exec(
           codeqlCmd,
           ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
-        }
-      core.endGroup();
+        
+        core.endGroup();
+      }
     }
   }
 
   const languages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES] || '';
   for (const language of languages.split(',')) {
-    core.startGroup('Finalizing ' + language);
-    await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
-    core.endGroup();
+    //If the path exists, then a database has already been built by autobuild.
+    if (!fs.existsSync(path.join(databaseFolder, language))) {
+      core.startGroup('Finalizing ' + language);
+      await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
+      core.endGroup();
+    }
   }
 }
 

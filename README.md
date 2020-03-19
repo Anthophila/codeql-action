@@ -16,22 +16,33 @@ jobs:
     strategy:
       fail-fast: false
 
-    runs-on: ubuntu-latest # you can try windows too but macos is not yet supported
+    runs-on: ubuntu-latest # windows-latest and ubuntu-latest are supported. macos-latest is not supported at this time. 
 
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout repository
+      uses: actions/checkout@v1
       with:
-        submodules: recursive # omit this if your repository doesn't use submodules
-    - uses: Anthophila/codeql-action/codeql/init@master
+        submodules: recursive # Omit this if your repository doesn't use submodules
+        
+    - name: Initialize CodeQL 
+      uses: Anthophila/codeql-action/codeql/init@master
       with:
-        languages: go, javascript # comma separated list of values from {go, python, javascript, java, cpp, csharp} (not YET ruby, sorry!)
-    - uses: Anthophila/codeql-action/codeql/finish@master
+        languages: go, javascript # Comma separated list of values from {go, python, javascript, java, cpp, csharp} 
+    
+    # Autobuild attempts to build any compiled languages. If this step fails, then you should remove it and add your 
+    # custom build steps. 
+    - name: Autobuild
+      uses: Anthophila/codeql-action/codeql/autobuild@master
+      
+    - name: Perform CodeQL Analysis
+      uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
 If you prefer to integrate this within an existing CI workflow, it should end up looking something like this:
+
 ```yaml
-...
-    - uses: Anthophila/codeql-action/codeql/init@master
+    - name: Initialize CodeQL
+      uses: Anthophila/codeql-action/codeql/init@master
       with:
         languages: go, javascript
 
@@ -40,7 +51,8 @@ If you prefer to integrate this within an existing CI workflow, it should end up
         make bootstrap
         make release
 
-    - uses: Anthophila/codeql-action/codeql/finish@master
+    - name: Perform CodeQL Analysis
+      uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
 NB: The CodeQL actions are intended to run on `push` events, not on `pull_request` events. Since the latter would produce analyses of no use, the CodeQL actions all terminate themselves without doing any work if they are run on a PR.

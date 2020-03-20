@@ -74,7 +74,7 @@ async function autobuild(codeqlCmd: string, databaseFolder: string) {
 
 async function run() {
   try {
-    if (util.should_abort('finish')) {
+    if (util.should_abort('autobuild')) {
       return;
     }
     const config = await configUtils.loadConfig();

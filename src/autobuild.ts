@@ -62,9 +62,12 @@ async function autobuild(codeqlCmd: string, databaseFolder: string) {
 
   const languages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES] || '';
   for (const language of languages.split(',')) {
-    core.startGroup('Finalizing ' + language);
-    await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
-    core.endGroup();
+    // Do not finalize scanned languages during autobuild step
+    if (language === "javascript" || language === "python" || language === "go") {
+      core.startGroup('Finalizing ' + language);
+      await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
+      core.endGroup();
+    }
   }
 }
 

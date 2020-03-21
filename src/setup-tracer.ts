@@ -188,6 +188,7 @@ async function run() {
 
         const config = await configUtils.loadConfig();
 
+        core.startGroup('Load configuration')
         // We will get the languages parameter first, but if it is not set, 
         // then we will get the languages in the repo from API
         let languages = core.getInput('languages', { required: false });
@@ -203,6 +204,8 @@ async function run() {
 
         core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languagesArr.join(','));
 
+        core.endGroup();
+        
         const sourceRoot = path.resolve();
 
         core.startGroup('Setup CodeQL tools');

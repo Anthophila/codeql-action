@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as octokit from '@octokit/rest';
 
 import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
@@ -134,6 +135,48 @@ function workspaceFolder(): string {
     return workspaceFolder;
 }
 
+// Gets the set of languages in the current repository
+function getLanguages(): string {
+    let repo_nwo = (process.env['GITHUB_REPOSITORY']?.split("/"));
+    if (repo_nwo) {
+    let owner = repo_nwo[0];
+    let repo = repo_nwo[1];    
+    let output = "";
+     
+    const ok = new octokit.Octokit({auth: process.env['GITHUB_TOKEN']})
+    ok.paginate("GET /repos/:owner/:repo/languages", ({
+        owner,
+        repo
+    }))
+    .then(response => {
+        let value = JSON.stringify(response).toLowerCase();
+        if (value.includes(`"c"`) || value.includes(`"c++"`)) {
+            output += "cpp,";
+        }
+        if (value.includes(`go`)) {
+            output += "go,";
+        }
+        if (value.includes(`"c#"`)) {
+            output += "csharp,";
+        }
+        if (value.includes(`"python"`)) {
+            output += "python,";
+        }
+        if (value.includes(`"java"`)) {
+            output += "java,";
+        }
+        if (value.includes(`"javascript"`)) {
+            output += "javascript,";
+        }
+        if (value.includes(`"typescript"`)) {
+            output += "typescript,";
+        }
+        return output;
+    });
+  }
+  return "";
+}
+
 async function run() {
     try {
         if (util.should_abort('init')) {
@@ -142,10 +185,17 @@ async function run() {
 
         const config = await configUtils.loadConfig();
 
-        const languages = core.getInput('languages', { required: true })
-            .split(',')
+        // We will get the languages parameter first, but if it is not set, 
+        // then we will get the languages in the repo from API
+        let languages = core.getInput('languages', { required: false });
+        if (!languages) {
+            languages = getLanguages();
+        }
+
+        languages.split(',')
             .map(x => x.trim())
             .filter(x => x.length > 0);
+
         core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
 
         const sourceRoot = path.resolve();

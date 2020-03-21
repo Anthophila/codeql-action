@@ -143,12 +143,20 @@ function getLanguages(): string {
         let repo = repo_nwo[1];    
         let output = "";
         core.debug(`GitHub repo ${repo_nwo[0]} ${repo_nwo[1]}`);
-        const ok = new octokit.Octokit({auth: process.env['GITHUB_TOKEN']})
-        ok.paginate("GET /repos/:owner/:repo/languages", ({
+        let ok = new octokit.Octokit({
+            auth: process.env['GITHUB_TOKEN'],
+            userAgent: "CodeQL Action",
+            log: require("console-log-level")({ level: "info" })
+        })
+        ok.request("GET /repos/:owner/:repo/languages", ({
+            headers: {
+                authorization: `token ${process.env['GITHUB_TOKEN']}`
+            },
             owner,
             repo
         }))
         .then(response => {
+            core.debug(`Languages API response: ${response}`)
             let value = JSON.stringify(response).toLowerCase();
             if (value.includes(`"c"`) || value.includes(`"c++"`)) {
                 output += "cpp,";
@@ -205,7 +213,7 @@ async function run() {
         core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languagesArr.join(','));
 
         core.endGroup();
-        
+
         const sourceRoot = path.resolve();
 
         core.startGroup('Setup CodeQL tools');

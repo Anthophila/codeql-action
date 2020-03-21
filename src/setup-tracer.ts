@@ -136,7 +136,7 @@ function workspaceFolder(): string {
 }
 
 // Gets the set of languages in the current repository
-function getLanguages(): string {
+async function getLanguages(): string {
     let repo_nwo = (process.env['GITHUB_REPOSITORY']?.split("/"));
     if (repo_nwo) {
         let owner = repo_nwo[0];
@@ -148,41 +148,38 @@ function getLanguages(): string {
             userAgent: "CodeQL Action",
             log: require("console-log-level")({ level: "info" })
         })
-        ok.request("GET /repos/:owner/:repo/languages", ({
+        const response = await ok.request("GET /repos/:owner/:repo/languages", ({
             owner,
             repo
         }))
-        .then(response => {
-            core.debug(`Languages API response: ${response}`)
-            let value = JSON.stringify(response).toLowerCase();
-            if (value.includes(`"c"`) || value.includes(`"c++"`)) {
-                output += "cpp,";
-            }
-            if (value.includes(`go`)) {
-                output += "go,";
-            }
-            if (value.includes(`"c#"`)) {
-                output += "csharp,";
-            }
-            if (value.includes(`"python"`)) {
-                output += "python,";
-            }
-            if (value.includes(`"java"`)) {
-                output += "java,";
-            }
-            if (value.includes(`"javascript"`)) {
-                output += "javascript,";
-            }
-            if (value.includes(`"typescript"`)) {
-                output += "typescript,";
-            }
-            return output;
-        })
-        .catch(error => {
-            core.error(`${error}`)
-        });
+        
+        core.debug(`Languages API response: ${response}`)
+        let value = JSON.stringify(response).toLowerCase();
+        if (value.includes(`"c"`) || value.includes(`"c++"`)) {
+            output += "cpp,";
+        }
+        if (value.includes(`go`)) {
+            output += "go,";
+        }
+        if (value.includes(`"c#"`)) {
+            output += "csharp,";
+        }
+        if (value.includes(`"python"`)) {
+            output += "python,";
+        }
+        if (value.includes(`"java"`)) {
+            output += "java,";
+        }
+        if (value.includes(`"javascript"`)) {
+            output += "javascript,";
+        }
+        if (value.includes(`"typescript"`)) {
+            output += "typescript,";
+        }
+        return output;
+    } else {
+        return "";
     }
-  return "";
 }
 
 async function run() {

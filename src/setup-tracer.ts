@@ -188,11 +188,13 @@ async function run() {
         // We will get the languages parameter first, but if it is not set, 
         // then we will get the languages in the repo from API
         let languages = core.getInput('languages', { required: false });
+        core.debug(`Languages from configuration: ${languages}`)
         if (!languages) {
             languages = getLanguages();
+            core.debug(`Languages from API: ${languages}`)
         }
 
-        var languagesArr = languages.split(',')
+        let languagesArr = languages.split(',')
             .map(x => x.trim())
             .filter(x => x.length > 0);
 

@@ -176,7 +176,7 @@ async function getLanguages(): Promise<string> {
             output += "javascript,";
         }
         if (value.includes(`"typescript"`)) {
-            output += "typescript,";
+            output += "javascript,";
         }
         return output;
     } else {

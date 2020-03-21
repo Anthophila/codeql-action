@@ -144,7 +144,7 @@ function getLanguages(): string {
         let output = "";
         core.debug(`GitHub repo ${repo_nwo[0]} ${repo_nwo[1]}`);
         let ok = new octokit.Octokit({
-            auth: core.getInput('languages', { required: false }),
+            auth: core.getInput('token'),
             userAgent: "CodeQL Action",
             log: require("console-log-level")({ level: "info" })
         })

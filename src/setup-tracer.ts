@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as fs from 'fs';
 import * as octokit from '@octokit/rest';
+import * as fs from 'fs';
 import * as path from 'path';
 
 
@@ -141,7 +141,8 @@ async function getLanguages(): Promise<string> {
     let repo_nwo = (process.env['GITHUB_REPOSITORY']?.split("/"));
     if (repo_nwo) {
         let owner = repo_nwo[0];
-        let repo = repo_nwo[1];    
+        let repo = repo_nwo[1];
+
         let output = "";
         core.debug(`GitHub repo ${repo_nwo[0]} ${repo_nwo[1]}`);
         let ok = new octokit.Octokit({
@@ -153,8 +154,8 @@ async function getLanguages(): Promise<string> {
             owner,
             repo
         }));
-        
-        core.debug(`Languages API response: ${response}`)
+
+        core.debug(`Languages API response: ${response}`);
         let value = JSON.stringify(response).toLowerCase();
         if (value.includes(`"c"`) || value.includes(`"c++"`)) {
             output += "cpp,";
@@ -193,7 +194,7 @@ async function run() {
 
         core.startGroup('Load language configuration');
 
-        // We will get the languages parameter first, but if it is not set, 
+        // We will get the languages parameter first, but if it is not set,
         // then we will get the languages in the repo from API
         let languagesStr = core.getInput('languages', { required: false });
         core.debug(`Languages from configuration: ${languagesStr}`);

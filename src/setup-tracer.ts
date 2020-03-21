@@ -192,11 +192,11 @@ async function run() {
             languages = getLanguages();
         }
 
-        languages.split(',')
+        var languagesArr = languages.split(',')
             .map(x => x.trim())
             .filter(x => x.length > 0);
 
-        core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
+        core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languagesArr.join(','));
 
         const sourceRoot = path.resolve();
 

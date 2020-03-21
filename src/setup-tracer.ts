@@ -136,7 +136,7 @@ function workspaceFolder(): string {
 }
 
 // Gets the set of languages in the current repository
-async function getLanguages(): string {
+async function getLanguages(): Promise<string> {
     let repo_nwo = (process.env['GITHUB_REPOSITORY']?.split("/"));
     if (repo_nwo) {
         let owner = repo_nwo[0];
@@ -196,7 +196,7 @@ async function run() {
         let languages = core.getInput('languages', { required: false });
         core.debug(`Languages from configuration: ${languages}`)
         if (!languages) {
-            languages = getLanguages();
+            languages = await getLanguages();
             core.debug(`Languages from API: ${languages}`)
         }
 

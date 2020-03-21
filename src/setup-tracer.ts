@@ -1,8 +1,9 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as octokit from '@octokit/rest';
+import * as path from 'path';
+
 
 import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
@@ -147,11 +148,11 @@ async function getLanguages(): Promise<string> {
             auth: core.getInput('token'),
             userAgent: "CodeQL Action",
             log: require("console-log-level")({ level: "debug" })
-        })
+        });
         const response = await ok.request("GET /repos/:owner/:repo/languages", ({
             owner,
             repo
-        }))
+        }));
         
         core.debug(`Languages API response: ${response}`)
         let value = JSON.stringify(response).toLowerCase();
@@ -190,15 +191,15 @@ async function run() {
 
         const config = await configUtils.loadConfig();
 
-        core.startGroup('Load language configuration')
+        core.startGroup('Load language configuration');
 
         // We will get the languages parameter first, but if it is not set, 
         // then we will get the languages in the repo from API
         let languagesStr = core.getInput('languages', { required: false });
-        core.debug(`Languages from configuration: ${languagesStr}`)
+        core.debug(`Languages from configuration: ${languagesStr}`);
         if (!languagesStr) {
             languagesStr = await getLanguages();
-            core.debug(`Languages from API: ${languagesStr}`)
+            core.debug(`Languages from API: ${languagesStr}`);
         }
 
         let languages = languagesStr.split(',')

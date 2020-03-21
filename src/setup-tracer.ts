@@ -144,14 +144,11 @@ function getLanguages(): string {
         let output = "";
         core.debug(`GitHub repo ${repo_nwo[0]} ${repo_nwo[1]}`);
         let ok = new octokit.Octokit({
-            auth: process.env['GITHUB_TOKEN'],
+            auth: core.getInput('languages', { required: false }),
             userAgent: "CodeQL Action",
             log: require("console-log-level")({ level: "info" })
         })
         ok.request("GET /repos/:owner/:repo/languages", ({
-            headers: {
-                authorization: `token ${process.env['GITHUB_TOKEN']}`
-            },
             owner,
             repo
         }))

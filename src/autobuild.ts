@@ -57,7 +57,8 @@ async function autobuild(codeqlCmd: string, databaseFolder: string) {
             silent: true,
             listeners: {
               stdout: (data) => {core.debug(data.toString()); },
-              stderr: (data) => {core.error("Autobuild process failed. Please confirm that you are analyzing a supported programming language, and manually specify build steps in the Actions workflow. "); }
+              stderr: (data) => {
+                core.error(`Autobuild process for ${language} failed. Please confirm that you are analyzing a supported programming language, and manually specify build steps in the Actions workflow. `); }
             }
           });
 

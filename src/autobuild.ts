@@ -53,7 +53,13 @@ async function autobuild(codeqlCmd: string, databaseFolder: string) {
         // Run trace command
         await exec.exec(
           codeqlCmd,
-          ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand]);
+          ['database', 'trace-command', path.join(databaseFolder, language), '--', traceCommand], {
+            silent: true,
+            listeners: {
+              stdout: (data) => {core.debug(data.toString()); },
+              stderr: (data) => {core.error("Autobuild process failed. Please confirm that you are analyzing a supported programming language, and manually specify build steps in the Actions workflow. "); }
+            }
+          });
 
         core.endGroup();
       }

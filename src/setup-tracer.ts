@@ -146,7 +146,7 @@ async function getLanguages(): Promise<string> {
         let ok = new octokit.Octokit({
             auth: core.getInput('token'),
             userAgent: "CodeQL Action",
-            log: require("console-log-level")({ level: "info" })
+            log: require("console-log-level")({ level: "debug" })
         })
         const response = await ok.request("GET /repos/:owner/:repo/languages", ({
             owner,
@@ -190,21 +190,22 @@ async function run() {
 
         const config = await configUtils.loadConfig();
 
-        core.startGroup('Load configuration')
+        core.startGroup('Load language configuration')
+
         // We will get the languages parameter first, but if it is not set, 
         // then we will get the languages in the repo from API
-        let languages = core.getInput('languages', { required: false });
-        core.debug(`Languages from configuration: ${languages}`)
-        if (!languages) {
-            languages = await getLanguages();
-            core.debug(`Languages from API: ${languages}`)
+        let languagesStr = core.getInput('languages', { required: false });
+        core.debug(`Languages from configuration: ${languagesStr}`)
+        if (!languagesStr) {
+            languagesStr = await getLanguages();
+            core.debug(`Languages from API: ${languagesStr}`)
         }
 
-        let languagesArr = languages.split(',')
+        let languages = languagesStr.split(',')
             .map(x => x.trim())
             .filter(x => x.length > 0);
 
-        core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languagesArr.join(','));
+        core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
 
         core.endGroup();
 

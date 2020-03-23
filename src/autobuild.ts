@@ -1,12 +1,9 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as io from '@actions/io';
-import * as fs from 'fs';
 import * as path from 'path';
 
 import * as configUtils from './config-utils';
 import * as sharedEnv from './shared-environment';
-import * as upload_lib from './upload-lib';
 import * as util from './util';
 
 interface SARIFFile {
@@ -58,7 +55,7 @@ async function autobuild(codeqlCmd: string, databaseFolder: string) {
             listeners: {
               stdout: (data) => {core.debug(data.toString()); },
               stderr: (data) => {
-                core.error(`Autobuild process for ${language} failed. Please confirm that you are analyzing a supported programming language, and manually specify build steps in the Actions workflow. 
+                core.error(`Autobuild process for ${language} failed. Please confirm that you are analyzing a supported programming language, and manually specify build steps in the Actions workflow.
                 Details: ${data}`); }
             }
           });

@@ -1,4 +1,6 @@
 import * as core from '@actions/core';
+import * as http from '@actions/http-client';
+import * as auth from '@actions/http-client/auth';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -191,14 +193,15 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
 
         core.debug(statusReportJSON);
         // TODO actually post status report to dotcom:
-        /*
+
         const githubToken = core.getInput('token');
         const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
         const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
         const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
                     + '/code-scanning/analysis/status';
         const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
-        */
+        core.debug('Status report status: ' + res.message.statusCode);
+        core.debug(await res.readBody());
     }
 
 }

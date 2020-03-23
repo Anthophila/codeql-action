@@ -13,7 +13,7 @@ async function run() {
         return;
     }
 
-    const config = configUtils.loadConfig();
+    const config = await configUtils.loadConfig();
 
     const sarifFile = core.getInput('sarif_file');
     await upload_lib.upload_sarif(sarifFile);

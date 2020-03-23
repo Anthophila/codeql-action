@@ -99,7 +99,7 @@ async function run() {
     if (util.should_abort('finish')) {
       return;
     }
-    const config = configUtils.loadConfig();
+    const config = await configUtils.loadConfig();
 
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];

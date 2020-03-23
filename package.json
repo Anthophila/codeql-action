@@ -3,48 +3,35 @@
   "version": "0.0.0",
   "private": true,
   "description": "CodeQL action",
-  "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "lint": "tslint -p . -c tslint.json 'src/**/*.ts'"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/aibaars/codeql.git"
-  },
-  "keywords": [
-    "actions",
-    "node",
-    "setup"
-  ],
-  "author": "YourNameOrOrganization",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.0.0",
     "@actions/exec": "^1.0.1",
-    "@actions/github": "^1.1.0",
     "@actions/http-client": "^1.0.4",
     "@actions/io": "^1.0.1",
     "@actions/tool-cache": "^1.1.2",
-    "@types/jszip": "^3.1.6",
     "file-url": "^3.0.0",
     "fs": "0.0.1-security",
     "long": "^4.0.0",
     "js-yaml": "^3.13.1",
     "md5": "^2.2.1",
     "path": "^0.12.7",
-    "tmp": "^0.1.0",
-    "tslint": "^6.0.0",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
     "@types/node": "^12.0.4",
+    "@types/jszip": "^3.1.6",
     "@types/long": "4.0.0",
     "jest": "^24.8.0",
     "jest-circus": "^24.7.1",
     "ts-jest": "^24.0.2",
-    "typescript": "^3.7.5"
+    "typescript": "^3.7.5",
+    "tslint": "^6.0.0"
   }
 }

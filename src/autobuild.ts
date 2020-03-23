@@ -11,17 +11,6 @@ interface SARIFFile {
   runs: any[];
 }
 
-function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
-  // Check SARIF version
-  if (combinedSarif.version === null) {
-    combinedSarif.version = newSarifRuns.version;
-  } else if (combinedSarif.version !== newSarifRuns.version) {
-    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
-  }
-
-  combinedSarif.runs.push(...newSarifRuns.runs);
-}
-
 async function autobuild(codeqlCmd: string, databaseFolder: string) {
   // Create db for scanned languages
   const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES];

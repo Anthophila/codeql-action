@@ -15,8 +15,16 @@ async function run() {
 
     const config = await configUtils.loadConfig();
 
-    const sarifFile = core.getInput('sarif_file');
-    await upload_lib.upload_sarif(sarifFile);
+    const sarifDir = core.getInput('sarif_dir');
+    if (sarifDir) {
+        const sarifFiles = fs.readdirSync(sarifDir)
+            .filter(f => f.endsWith(".sarif"));
+        await upload_lib.upload_sarif(sarifFiles);
+
+    } else {
+        const sarifFile = core.getInput('sarif_file');
+        await upload_lib.upload_sarif([sarifFile]);
+    }
 }
 
 void run();

@@ -23,16 +23,53 @@ async function getSentinelFilePath(sarifFile: string): Promise<string> {
     return path.join(uploadsTmpDir, md5(fs.realpathSync(sarifFile)));
 }
 
-export async function upload_sarif(sarifFile: string) {
-    core.startGroup("Uploading results");
-    try {
-        // The upload may happen in the finish or upload-sarif actions but we only want
-        // the file to be uploaded once, so we create an extra file next to it to mark
-        // that the file has been uploaded and should be skipped if encountered again.
+// Checks if any of the sarif files have been uploaded before.
+// The previous upload is detected because we create an extra file next to it.
+async function anyFilesAlreadyUploaded(sarifFiles: string[]): Promise<boolean> {
+    for (let sarifFile of sarifFiles) {
         const alreadyUploadedSentinelFile = await getSentinelFilePath(sarifFile);
         if (fs.existsSync(alreadyUploadedSentinelFile)) {
             // Already uploaded
-            core.debug('Skipping upload of "' + sarifFile + '", already uploaded');
+            core.debug('"' + sarifFile + '" has already been uploaded');
+            return true;
+        }
+    }
+    return false;
+}
+
+// Takes a list of paths to sarif files and combines them together,
+// returning the contents of the combined sarif file.
+export function combineSarifFiles(sarifFiles: string[]): string {
+    let combinedSarif = {
+        version: null,
+        runs: [] as any[]
+    };
+
+    for (let sarifFile of sarifFiles) {
+        let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
+        // Check SARIF version
+        if (combinedSarif.version === null) {
+            combinedSarif.version = sarifObject.version;
+        } else if (combinedSarif.version !== sarifObject.version) {
+            throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + sarifObject.version;
+        }
+
+        combinedSarif.runs.push(...sarifObject.runs);
+    }
+
+    return JSON.stringify(combinedSarif);
+}
+
+// Uploads the given set of sarif files.
+export async function upload_sarif(sarifFiles: string[]) {
+    core.startGroup("Uploading results");
+    try {
+        // Check if any of the sarif files have been uploaded before. If any have been
+        // uploaded before then abort uploading any more. This is perhaps not perfect
+        // behaviour but it should be fine. The case this is intended to catch is when
+        // the upload happens in both the finish and upload-sarif actions.
+        if (await anyFilesAlreadyUploaded(sarifFiles)) {
+            core.info("Aborting: detected that SARIF files have already been uploaded");
             return;
         }
 
@@ -48,7 +85,8 @@ export async function upload_sarif(sarifFile: string) {
             return;
         }
 
-        let sarifPayload = fs.readFileSync(sarifFile).toString();
+        core.debug("Uploading sarif files: " + JSON.stringify(sarifFiles));
+        let sarifPayload = combineSarifFiles(sarifFiles);
         sarifPayload = fingerprints.addFingerprints(sarifPayload);
 
         const zipped_sarif = zlib.gzipSync(sarifPayload).toString('base64');
@@ -95,8 +133,10 @@ export async function upload_sarif(sarifFile: string) {
             core.info("Successfully uploaded results");
         }
 
-        // Mark the sarif file as uploaded
-        fs.writeFileSync(alreadyUploadedSentinelFile, '');
+        // Mark the sarif files as uploaded
+        for (let sarifFile of sarifFiles) {
+            fs.writeFileSync(await getSentinelFilePath(sarifFile), '');
+        }
 
     } catch (error) {
         core.setFailed(error.message);

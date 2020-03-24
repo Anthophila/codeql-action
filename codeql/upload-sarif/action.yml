@@ -3,9 +3,12 @@ description: 'Upload the analysis results'
 author: 'GitHub'
 inputs:
   sarif_file:
-    description: The SARIF file to be uploaded
+    description: The SARIF file to be uploaded. Will be ignored if sarif_dir is specified.
     required: false
     default: '../results.sarif'
+  sarif_dir:
+    description: A directory containing SARIF files to be uploaded. Will take priority over sarif_file.
+    required: false
   checkout_path:
     description: "The path at which the analyzed repository was checked out. Used to relativeize any absolute paths in the uploaded SARIF file."
     required: false

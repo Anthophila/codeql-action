@@ -9,22 +9,6 @@ import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
 
-interface SARIFFile {
-  version: string | null;
-  runs: any[];
-}
-
-function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
-  // Check SARIF version
-  if (combinedSarif.version === null) {
-    combinedSarif.version = newSarifRuns.version;
-  } else if (combinedSarif.version !== newSarifRuns.version) {
-    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
-  }
-
-  combinedSarif.runs.push(...newSarifRuns.runs);
-}
-
 async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
   // Create db for scanned languages
   const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
@@ -63,35 +47,31 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<SARIFFile> {
+// Runs queries and returns a list of paths to sarif files
+async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<string[]> {
   const databaseFolder = path.join(resultsFolder, 'db');
-
-  let combinedSarif: SARIFFile = {
-    version: null,
-    runs: []
-  };
 
   const sarifFolder = path.join(resultsFolder, 'sarif');
   await io.mkdirP(sarifFolder);
+  const sarifFiles = [] as string[];
 
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);
 
     const sarifFile = path.join(sarifFolder, database + '.sarif');
+    sarifFiles.push(sarifFile);
+
     await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
       '--format=sarif-latest', '--output=' + sarifFile,
       '--no-sarif-add-snippets',
       database + '-lgtm.qls',
       ...config.inRepoQueries]);
 
-    let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
-    appendSarifRuns(combinedSarif, sarifObject);
-
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
     core.endGroup();
   }
 
-  return combinedSarif;
+  return sarifFiles;
 }
 
 async function run() {
@@ -112,16 +92,15 @@ async function run() {
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
     core.info('Analyzing database');
-    const sarifResults = await runQueries(codeqlCmd, resultsFolder, config);
-    const sarifPayload = JSON.stringify(sarifResults);
+    const sarifFiles = await runQueries(codeqlCmd, resultsFolder, config);
 
     // Write analysis result to a file
     const outputFile = core.getInput('output_file');
     await io.mkdirP(path.dirname(outputFile));
-    fs.writeFileSync(outputFile, sarifPayload);
+    fs.writeFileSync(outputFile, upload_lib.combineSarifFiles(sarifFiles));
 
     if ('true' === core.getInput('upload')) {
-      await upload_lib.upload_sarif(outputFile);
+      await upload_lib.upload_sarif(sarifFiles);
     }
 
   } catch (error) {

@@ -179,8 +179,6 @@ function getStatusReport(
         statusReport.matrix_vars = matrix;
     }
 
-    // TODO add matrix vars if defined (from action parameter following robert's PR)
-
     return statusReport;
 }
 
@@ -191,8 +189,7 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
     if (statusReport) {
         const statusReportJSON = JSON.stringify(statusReport);
 
-        core.debug(statusReportJSON);
-        // TODO actually post status report to dotcom:
+        core.debug('Sending status report: ' + statusReportJSON);
 
         const githubToken = core.getInput('token');
         const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
@@ -200,8 +197,6 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
         const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
                     + '/code-scanning/analysis/status';
         const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
-        core.debug('Status report status: ' + res.message.statusCode);
-        core.debug(await res.readBody());
     }
 
 }

@@ -136,6 +136,17 @@ function workspaceFolder(): string {
     return workspaceFolder;
 }
 
+// Translate between GitHub's API names for languages and ours
+const codeqlLanguages = {
+    'C': 'cpp',
+    'C++': 'cpp',
+    'C#': 'csharp',
+    'Go': 'go',
+    'Java': 'java',
+    'JavaScript': 'javascript',
+    'TypeScript': 'javascript'
+};
+
 // Gets the set of languages in the current repository
 async function getLanguages(): Promise<string[]> {
     let repo_nwo = process.env['GITHUB_REPOSITORY']?.split("/");
@@ -155,26 +166,13 @@ async function getLanguages(): Promise<string[]> {
         }));
 
         core.debug("Languages API response: " + JSON.stringify(response));
-        let languages = [] as string[];
-        if ("C" in response.data || "C++" in response.data) {
-            languages.push("cpp");
+        let languages: Set<string> = new Set();
+        for (let lang in response.data) {
+            if (lang in codeqlLanguages) {
+                languages.add(codeqlLanguages[lang])
+            }
         }
-        if ("Go" in response.data) {
-            languages.push("go");
-        }
-        if ("C#" in response.data) {
-            languages.push("csharp");
-        }
-        if ("Python" in response.data) {
-            languages.push("python");
-        }
-        if ("Java" in response.data) {
-            languages.push("java");
-        }
-        if ("JavaScript" in response.data || "TypeScript" in response.data) {
-            languages.push("javascript");
-        }
-        return languages;
+        return [...languages];
     } else {
         return [];
     }
@@ -245,8 +243,6 @@ async function run() {
                 scannedLanguages.push(language);
             }
         }
-        core.exportVariable(sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES, scannedLanguages.join(','));
-
         const tracedLanguageKeys = Object.keys(tracedLanguages);
         if (tracedLanguageKeys.length > 0) {
             const mainTracerConfig = concatTracerConfigs(tracedLanguages);
@@ -271,6 +267,9 @@ async function run() {
                 }
             }
         }
+
+        core.exportVariable(sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES, scannedLanguages.join(','));
+        core.exportVariable(sharedEnv.CODEQL_ACTION_TRACED_LANGUAGES, tracedLanguageKeys.join(','));
 
         // TODO: make this a "private" environment variable of the action
         core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);

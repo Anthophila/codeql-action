@@ -31,6 +31,13 @@ async function run() {
   const cmdName = process.platform === 'win32' ? 'autobuild.cmd' : 'autobuild.sh';
   const autobuildCmd = path.join(path.dirname(codeqlCmd), '..', language, 'tools', cmdName);
 
+
+  // Update SEMMLE_JAVA_TOOL_OPTIONS to contain '-Dhttp.keepAlive=false'
+  // This is because of an issue with Azure pipelines timing out connections after 4 minutes
+  // and Maven not properly handling closed connections
+  // Otherwise long build processes will timeout when pulling down Java packages
+  process.env['SEMMLE_JAVA_TOOL_OPTIONS'] += ' -Dhttp.keepAlive=false'
+
   await exec.exec(autobuildCmd);
   core.endGroup();
 }

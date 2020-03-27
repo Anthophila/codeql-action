@@ -1,10 +1,9 @@
-import * as path from 'path'
-
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as path from 'path';
 
 import * as sharedEnv from './shared-environment';
-import * as util from './util'
+import * as util from './util';
 
 async function run() {
   if (util.should_abort('autobuild')) {
@@ -17,7 +16,7 @@ async function run() {
   const language = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES]?.split(',')[0];
 
   if (language === undefined) {
-    core.info("None of the languages in this project require extra build steps")
+    core.info("None of the languages in this project require extra build steps");
     return;
   }
 
@@ -36,7 +35,7 @@ async function run() {
   // This is because of an issue with Azure pipelines timing out connections after 4 minutes
   // and Maven not properly handling closed connections
   // Otherwise long build processes will timeout when pulling down Java packages
-  process.env['SEMMLE_JAVA_TOOL_OPTIONS'] += ' -Dhttp.keepAlive=false'
+  process.env['SEMMLE_JAVA_TOOL_OPTIONS'] += ' -Dhttp.keepAlive=false';
 
   await exec.exec(autobuildCmd);
   core.endGroup();

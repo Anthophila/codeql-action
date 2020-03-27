@@ -59,6 +59,7 @@ async function tracerConfig(
             info.env[key] = value;
         }
     }
+
     return info;
 }
 
@@ -169,7 +170,7 @@ async function getLanguages(): Promise<string[]> {
         let languages: Set<string> = new Set();
         for (let lang in response.data) {
             if (lang in codeqlLanguages) {
-                languages.add(codeqlLanguages[lang])
+                languages.add(codeqlLanguages[lang]);
             }
         }
         return [...languages];

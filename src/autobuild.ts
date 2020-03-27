@@ -28,7 +28,7 @@ async function run() {
   }
 
   const cmdName = process.platform === 'win32' ? 'autobuild.cmd' : 'autobuild.sh';
-  const autobuildCmd = path.join(path.dirname(codeqlCmd), '..', language, 'tools', cmdName);
+  const autobuildCmd = path.join(path.dirname(codeqlCmd), language, 'tools', cmdName);
 
 
   // Update SEMMLE_JAVA_TOOL_OPTIONS to contain '-Dhttp.keepAlive=false'

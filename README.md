@@ -23,8 +23,6 @@ jobs:
       with:
         submodules: recursive # omit this if your repository doesn't use submodules
     - uses: Anthophila/codeql-action/codeql/init@master
-      with:
-        languages: go, javascript # comma separated list of values from {go, python, javascript, java, cpp, csharp} (not YET ruby, sorry!)
     - uses: Anthophila/codeql-action/codeql/finish@master
 ```
 

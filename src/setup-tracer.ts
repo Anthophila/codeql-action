@@ -1,5 +1,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as octokit from '@octokit/rest';
+import consoleLogLevel from 'console-log-level';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -134,6 +136,50 @@ function workspaceFolder(): string {
     return workspaceFolder;
 }
 
+// Gets the set of languages in the current repository
+async function getLanguages(): Promise<string[]> {
+    let repo_nwo = process.env['GITHUB_REPOSITORY']?.split("/");
+    if (repo_nwo) {
+        let owner = repo_nwo[0];
+        let repo = repo_nwo[1];
+
+        core.debug(`GitHub repo ${owner} ${repo}`);
+        let ok = new octokit.Octokit({
+            auth: core.getInput('token'),
+            userAgent: "CodeQL Action",
+            log: consoleLogLevel({ level: "debug" })
+        });
+        const response = await ok.request("GET /repos/:owner/:repo/languages", ({
+            owner,
+            repo
+        }));
+
+        core.debug("Languages API response: " + JSON.stringify(response));
+        let languages = [] as string[];
+        if ("C" in response.data || "C++" in response.data) {
+            languages.push("cpp");
+        }
+        if ("Go" in response.data) {
+            languages.push("go");
+        }
+        if ("C#" in response.data) {
+            languages.push("csharp");
+        }
+        if ("Python" in response.data) {
+            languages.push("python");
+        }
+        if ("Java" in response.data) {
+            languages.push("java");
+        }
+        if ("JavaScript" in response.data || "TypeScript" in response.data) {
+            languages.push("javascript");
+        }
+        return languages;
+    } else {
+        return [];
+    }
+}
+
 async function run() {
     try {
         if (util.should_abort('init')) {
@@ -142,11 +188,30 @@ async function run() {
 
         const config = await configUtils.loadConfig();
 
-        const languages = core.getInput('languages', { required: true })
+        core.startGroup('Load language configuration');
+
+        // We will get the languages parameter first, but if it is not set,
+        // then we will get the languages in the repo from API
+        let languages = core.getInput('languages', { required: false })
             .split(',')
             .map(x => x.trim())
             .filter(x => x.length > 0);
+        core.info("Languages from configuration: " + JSON.stringify(languages));
+        if (languages.length === 0) {
+            languages = await getLanguages();
+            core.info("Automatically detected languages: " + JSON.stringify(languages));
+        }
+
+        // If the languages parameter was not given and no languages were
+        // detected then fail here as this is a workflow configuration error.
+        if (languages.length === 0) {
+            core.setFailed("Did not detect any languages to analyze. Please update input in workflow.");
+            return;
+        }
+
         core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
+
+        core.endGroup();
 
         const sourceRoot = path.resolve();
 

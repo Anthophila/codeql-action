@@ -14,8 +14,6 @@ inputs:
   config-file:
     description: Path of the config file to use
     required: false
-  token:
-    default: ${{ github.token }}
 runs:
   using: 'node12'
   main: '../../lib/setup-tracer.js'

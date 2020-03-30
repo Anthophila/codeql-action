@@ -32,12 +32,13 @@ async function run() {
     const autobuildCmd = path.join(path.dirname(codeqlCmd), language, 'tools', cmdName);
 
 
-    // TODO: Update GRADLE_OPTIONS to contain '-Dhttp.keepAlive=false'
+    // Update JAVA_TOOL_OPTIONS to contain '-Dhttp.keepAlive=false'
     // This is because of an issue with Azure pipelines timing out connections after 4 minutes
     // and Maven not properly handling closed connections
     // Otherwise long build processes will timeout when pulling down Java packages
-    // It looks like autobuild isn't pulling in SEMMLE_JAVA_TOOL_OPTIONS, it should
-    // I also am not having success with GRADLE_OPTIONS
+    // https://developercommunity.visualstudio.com/content/problem/292284/maven-hosted-agent-connection-timeout.html
+    let javaToolOptions = process.env['JAVA_TOOL_OPTIONS'] || "";
+    process.env['JAVA_TOOL_OPTIONS'] = [...javaToolOptions.split(/\s+/), '-Dhttp.keepAlive=false'].join(' ');
 
     await exec.exec(autobuildCmd);
     core.endGroup();

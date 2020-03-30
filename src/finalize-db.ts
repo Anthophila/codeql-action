@@ -85,7 +85,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
       '--format=sarif-latest',
       '--output=' + sarifFile,
       '--no-sarif-add-snippets',
-      database + '.qls',
+      database + '-code-scanning.qls',
       ...config.inRepoQueries,
     ]);
 

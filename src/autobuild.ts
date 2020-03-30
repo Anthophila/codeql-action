@@ -16,7 +16,7 @@ async function run() {
     // Assume the first language we heard about
     const language = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES]?.split(',')[0];
 
-    if (language === undefined) {
+    if (!language) {
       core.info("None of the languages in this project require extra build steps");
       return;
     }
@@ -24,7 +24,7 @@ async function run() {
     core.startGroup('Attempting to automatically build project in ' + language);
     // TODO: share config accross actions better via env variables
     const codeqlCmd = process.env[sharedEnv.CODEQL_ACTION_CMD];
-    if (codeqlCmd === undefined) {
+    if (!codeqlCmd) {
       throw "Required environment variabled " + sharedEnv.CODEQL_ACTION_CMD + "not set. Did you run the init action?";
     }
 

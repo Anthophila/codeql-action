@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as io from '@actions/io';
 import * as octokit from '@octokit/rest';
 import consoleLogLevel from 'console-log-level';
 import * as fs from 'fs';
@@ -228,6 +229,7 @@ async function run() {
 
         const codeqlResultFolder = path.resolve(workspaceFolder(), 'codeql_results');
         const databaseFolder = path.resolve(codeqlResultFolder, 'db');
+        await io.mkdirP(databaseFolder);
 
         let tracedLanguages: { [key: string]: TracerConfig } = {};
         let scannedLanguages: string[] = [];
@@ -235,6 +237,7 @@ async function run() {
         // TODO: replace this code once CodeQL supports multi-language tracing
         for (let language of languages) {
             const languageDatabase = path.join(databaseFolder, language);
+
             // Init language database
             await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot]);
             // TODO: add better detection of 'traced languages' instead of using a hard coded list

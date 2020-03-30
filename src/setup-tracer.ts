@@ -59,7 +59,6 @@ async function tracerConfig(
             info.env[key] = value;
         }
     }
-
     return info;
 }
 
@@ -170,6 +169,8 @@ async function getLanguages(): Promise<string[]> {
         let languages: Set<string> = new Set();
         for (let lang in response.data) {
             if (lang in codeqlLanguages) {
+                // Sets in javascript maintain insertion order so we're
+                // saving in the order the GitHub API is returning them
                 languages.add(codeqlLanguages[lang]);
             }
         }

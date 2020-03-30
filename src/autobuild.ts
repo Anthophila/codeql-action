@@ -38,7 +38,7 @@ async function run() {
     // Otherwise long build processes will timeout when pulling down Java packages
     // https://developercommunity.visualstudio.com/content/problem/292284/maven-hosted-agent-connection-timeout.html
     let javaToolOptions = process.env['JAVA_TOOL_OPTIONS'] || "";
-    process.env['JAVA_TOOL_OPTIONS'] = [...javaToolOptions.split(/\s+/), '-Dhttp.keepAlive=false'].join(' ');
+    process.env['JAVA_TOOL_OPTIONS'] = [...javaToolOptions.split(/\s+/), '-Dhttp.keepAlive=false', '-Dmaven.wagon.http.pool=false'].join(' ');
 
     await exec.exec(autobuildCmd);
     core.endGroup();

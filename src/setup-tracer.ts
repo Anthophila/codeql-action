@@ -1,7 +1,8 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as octokit from '@octokit/rest';
+import consoleLogLevel from 'console-log-level';
 import * as fs from 'fs';
-import * as yaml from 'js-yaml';
 import * as path from 'path';
 
 import * as configUtils from './config-utils';
@@ -135,55 +136,48 @@ function workspaceFolder(): string {
     return workspaceFolder;
 }
 
-function initConfig(): configUtils.Config {
-    const configFile = core.getInput('config-file');
+// Gets the set of languages in the current repository
+async function getLanguages(): Promise<string[]> {
+    let repo_nwo = process.env['GITHUB_REPOSITORY']?.split("/");
+    if (repo_nwo) {
+        let owner = repo_nwo[0];
+        let repo = repo_nwo[1];
 
-    const config = new configUtils.Config();
+        core.debug(`GitHub repo ${owner} ${repo}`);
+        let ok = new octokit.Octokit({
+            auth: core.getInput('token'),
+            userAgent: "CodeQL Action",
+            log: consoleLogLevel({ level: "debug" })
+        });
+        const response = await ok.request("GET /repos/:owner/:repo/languages", ({
+            owner,
+            repo
+        }));
 
-    // If no config file was provided create an empty one
-    if (configFile === '') {
-        core.debug('No configuration file was provided');
-        return config;
+        core.debug("Languages API response: " + JSON.stringify(response));
+        let languages = [] as string[];
+        if ("C" in response.data || "C++" in response.data) {
+            languages.push("cpp");
+        }
+        if ("Go" in response.data) {
+            languages.push("go");
+        }
+        if ("C#" in response.data) {
+            languages.push("csharp");
+        }
+        if ("Python" in response.data) {
+            languages.push("python");
+        }
+        if ("Java" in response.data) {
+            languages.push("java");
+        }
+        if ("JavaScript" in response.data || "TypeScript" in response.data) {
+            languages.push("javascript");
+        }
+        return languages;
+    } else {
+        return [];
     }
-
-    try {
-        const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
-
-        if (parsedYAML.name && typeof parsedYAML.name === "string") {
-            config.name = parsedYAML.name;
-        }
-
-        const queries = parsedYAML.queries;
-        if (queries && queries instanceof Array) {
-            queries.forEach(query => {
-                if (query.uses && typeof query.uses === "string") {
-                    config.addQuery(query.uses);
-                }
-            });
-        }
-
-        const pathsIgnore = parsedYAML['paths-ignore'];
-        if (pathsIgnore && queries instanceof Array) {
-            pathsIgnore.forEach(path => {
-                if (typeof path === "string") {
-                    config.pathsIgnore.push(path);
-                }
-            });
-        }
-
-        const paths = parsedYAML.paths;
-        if (paths && paths instanceof Array) {
-            paths.forEach(path => {
-                if (typeof path === "string") {
-                    config.paths.push(path);
-                }
-            });
-        }
-    } catch (err) {
-        core.setFailed(err);
-    }
-
-    return config;
 }
 
 async function run() {
@@ -192,13 +186,32 @@ async function run() {
             return;
         }
 
-        const config = initConfig();
+        const config = await configUtils.loadConfig();
 
-        const languages = core.getInput('languages', { required: true })
+        core.startGroup('Load language configuration');
+
+        // We will get the languages parameter first, but if it is not set,
+        // then we will get the languages in the repo from API
+        let languages = core.getInput('languages', { required: false })
             .split(',')
             .map(x => x.trim())
             .filter(x => x.length > 0);
+        core.info("Languages from configuration: " + JSON.stringify(languages));
+        if (languages.length === 0) {
+            languages = await getLanguages();
+            core.info("Automatically detected languages: " + JSON.stringify(languages));
+        }
+
+        // If the languages parameter was not given and no languages were
+        // detected then fail here as this is a workflow configuration error.
+        if (languages.length === 0) {
+            core.setFailed("Did not detect any languages to analyze. Please update input in workflow.");
+            return;
+        }
+
         core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
+
+        core.endGroup();
 
         const sourceRoot = path.resolve();
 
@@ -263,7 +276,6 @@ async function run() {
         core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
         core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
 
-        await configUtils.saveConfig(config);
     } catch (error) {
         core.setFailed(error.message);
     }

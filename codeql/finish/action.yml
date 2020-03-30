@@ -14,6 +14,8 @@ inputs:
     default: true
   token:
     default: ${{ github.token }}
+  matrix:
+    default: ${{ toJson(matrix) }}
 runs:
   using: 'node12'
   main: '../../lib/finalize-db.js'

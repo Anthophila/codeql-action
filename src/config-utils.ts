@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as fs from 'fs';
+import * as yaml from 'js-yaml';
 import * as path from 'path';
 
 export class ExternalQuery {
@@ -62,7 +63,58 @@ export class Config {
 
 const configFolder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
 
-export async function saveConfig(config: Config) {
+function initConfig(): Config {
+    const configFile = core.getInput('config-file');
+
+    const config = new Config();
+
+    // If no config file was provided create an empty one
+    if (configFile === '') {
+        core.debug('No configuration file was provided');
+        return config;
+    }
+
+    try {
+        const parsedYAML = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
+
+        if (parsedYAML.name && typeof parsedYAML.name === "string") {
+            config.name = parsedYAML.name;
+        }
+
+        const queries = parsedYAML.queries;
+        if (queries && queries instanceof Array) {
+            queries.forEach(query => {
+                if (query.uses && typeof query.uses === "string") {
+                    config.addQuery(query.uses);
+                }
+            });
+        }
+
+        const pathsIgnore = parsedYAML['paths-ignore'];
+        if (pathsIgnore && queries instanceof Array) {
+            pathsIgnore.forEach(path => {
+                if (typeof path === "string") {
+                    config.pathsIgnore.push(path);
+                }
+            });
+        }
+
+        const paths = parsedYAML.paths;
+        if (paths && paths instanceof Array) {
+            paths.forEach(path => {
+                if (typeof path === "string") {
+                    config.paths.push(path);
+                }
+            });
+        }
+    } catch (err) {
+        core.setFailed(err);
+    }
+
+    return config;
+}
+
+async function saveConfig(config: Config) {
     const configString = JSON.stringify(config);
     await io.mkdirP(configFolder);
     fs.writeFileSync(path.join(configFolder, 'config'), configString, 'utf8');
@@ -70,9 +122,19 @@ export async function saveConfig(config: Config) {
     core.debug(configString);
 }
 
-export function loadConfig(): Config {
-    const configString = fs.readFileSync(path.join(configFolder, 'config'), 'utf8');
-    core.debug('Loaded config:');
-    core.debug(configString);
-    return JSON.parse(configString);
+export async function loadConfig(): Promise<Config> {
+    const configFile = path.join(configFolder, 'config');
+    if (fs.existsSync(configFile)) {
+        const configString = fs.readFileSync(configFile, 'utf8');
+        core.debug('Loaded config:');
+        core.debug(configString);
+        return JSON.parse(configString);
+
+    } else {
+        const config = initConfig();
+        core.debug('Initialized config:');
+        core.debug(JSON.stringify(config));
+        await saveConfig(config);
+        return config;
+    }
 }

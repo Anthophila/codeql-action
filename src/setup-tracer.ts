@@ -218,6 +218,7 @@ async function run() {
 
         core.startGroup('Setup CodeQL tools');
         const codeqlSetup = await setuptools.setupCodeQL();
+        await exec.exec(codeqlSetup.cmd, ['version', '--format=json']);
         core.endGroup();
 
         // Forward Go flags

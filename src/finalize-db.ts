@@ -63,16 +63,17 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function checkoutExternalQueries(config: configUtils.Config) {
+export async function checkoutExternalQueries(config: configUtils.Config) {
   const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
 
   for (const externalQuery of config.externalQueries) {
     core.info('Checking out ' + externalQuery.repository);
 
     const checkoutLocation = path.join(folder, externalQuery.repository);
-    const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
-    await exec.exec('git', ['clone', repoURL, checkoutLocation]);
-    await exec.exec('git', ['checkout', externalQuery.ref]);
+    if (!fs.existsSync(checkoutLocation)) {
+      const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
+      await exec.exec('git', ['clone', '--branch', externalQuery.ref, repoURL, checkoutLocation]);
+    }
 
     config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));
   }

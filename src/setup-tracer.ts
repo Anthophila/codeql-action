@@ -225,7 +225,7 @@ async function run() {
 
     } catch (error) {
         core.setFailed(error.message);
-        await util.reportActionFailed('init', 'unspecified');
+        await util.reportActionFailed('init', error.message, error.stack);
         return;
     }
     await util.reportActionSucceeded('init');

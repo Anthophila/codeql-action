@@ -16,7 +16,7 @@ async function run() {
         await upload_lib.upload_sarif(sarifFile);
     } catch (error) {
         core.setFailed(error.message);
-        await util.reportActionFailed('upload-sarif', 'unspecified');
+        await util.reportActionFailed('upload-sarif', error.message, error.stack);
         return;
     }
 

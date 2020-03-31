@@ -42,13 +42,6 @@ export async function upload_sarif(sarifFile: string) {
         const ref = util.get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
         const analysisName = util.get_required_env_param('GITHUB_WORKFLOW');
 
-        if (commitOid === undefined
-            || workflowRunIDStr === undefined
-            || ref === undefined
-            || analysisName === undefined) {
-            return;
-        }
-
         let sarifPayload = fs.readFileSync(sarifFile).toString();
         sarifPayload = fingerprints.addFingerprints(sarifPayload);
 

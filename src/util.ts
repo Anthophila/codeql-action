@@ -42,13 +42,13 @@ export function workspaceFolder(): string {
 }
 
 /**
- * Get an environment parameter, and fail the action if it has no value
+ * Get an environment parameter, but throw an error if it is not set.
  */
 // TODO rename to camelCase
-export function get_required_env_param(paramName: string): string | undefined {
+export function get_required_env_param(paramName: string): string {
     const value = process.env[paramName];
     if (value === undefined) {
-        core.setFailed(paramName + ' environment variable must be set');
+        throw new Error(paramName + ' environment variable must be set');
     }
     core.debug(paramName + '=' + value);
     return value;
@@ -190,7 +190,7 @@ interface StatusReport {
  * @param cause  Cause of failure (only supply if status is 'failure')
  * @param exception Exception (only supply if status is 'failure')
  */
-function getStatusReport(
+function createStatusReport(
     actionName: string,
     status: string,
     startedAt: Date,
@@ -202,11 +202,6 @@ function getStatusReport(
     const commitOid = get_required_env_param('GITHUB_SHA');
     const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
     const workflowName = get_required_env_param('GITHUB_WORKFLOW');
-    if (workflowRunIDStr === undefined
-        || workflowName === undefined
-        || commitOid === undefined) {
-        return;
-    }
     let jobName = process.env['GITHUB_JOB'];
     if (!jobName) {
         jobName = '';
@@ -281,7 +276,7 @@ export async function reportActionStarting(action: string): Promise<boolean> {
         languages = readAnalysedLanguages();
     }
 
-    const statusReport = getStatusReport(action, 'starting', startedAt, languages);
+    const statusReport = createStatusReport(action, 'starting', startedAt, languages);
     if (!statusReport) {
         return false;
     }
@@ -299,7 +294,7 @@ export async function reportActionStarting(action: string): Promise<boolean> {
  */
 export async function reportActionFailed(action: string, cause?: string, exception?: string) {
     await sendStatusReport(
-        getStatusReport(action, 'failure', readInitStartedDate(), readAnalysedLanguages(), cause, exception));
+        createStatusReport(action, 'failure', readInitStartedDate(), readAnalysedLanguages(), cause, exception));
 }
 
 /**
@@ -309,5 +304,5 @@ export async function reportActionFailed(action: string, cause?: string, excepti
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionSucceeded(action: string) {
-    await sendStatusReport(getStatusReport(action, 'success', readInitStartedDate(), readAnalysedLanguages()));
+    await sendStatusReport(createStatusReport(action, 'success', readInitStartedDate(), readAnalysedLanguages()));
 }

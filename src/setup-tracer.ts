@@ -4,7 +4,6 @@ import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
@@ -127,21 +126,11 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     return { env, spec };
 }
 
-function workspaceFolder(): string {
-    let workspaceFolder = process.env['RUNNER_WORKSPACE'];
-    if (!workspaceFolder)
-        workspaceFolder = path.resolve('..');
-
-    return workspaceFolder;
-}
-
 async function run() {
     try {
         if (util.should_abort('init') || !await util.reportActionStarting('init')) {
             return;
         }
-
-        const config = await configUtils.loadConfig(); // TODO remove unused stuff like this
 
         core.startGroup('Load language configuration');
 

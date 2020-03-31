@@ -140,26 +140,6 @@ export async function getLanguages(): Promise<string[]> {
 
     return languages;
 }
-/**
- * Record the current time as the start of the init action, in a file in the workspace.
- * Returns the Date that was recorded.
- */
-function writeInitStartedDate(): Date {
-    const now = new Date();
-    const initStartedPath = path.resolve(workspaceFolder(), 'init-action-start-time');
-    fs.writeFileSync(initStartedPath, now.toISOString(), 'utf8');
-
-    return now;
-}
-
-/**
- * Read the previously recorded start time of the init action.
- * Returns the Date that was previously recorded.
- */
-function readInitStartedDate(): Date {
-    const initStartedPath = path.resolve(workspaceFolder(), 'init-action-start-time');
-    return new Date(fs.readFileSync(initStartedPath, 'utf8'));
-}
 
 interface StatusReport {
     "workflow_run_id": number;
@@ -182,29 +162,29 @@ interface StatusReport {
  *
  * @param actionName The name of the action, e.g. 'init', 'finish', 'upload-sarif'
  * @param status The status. Must be 'success', 'failure', or 'starting'
- * @param startedAt The start time of the init action (only supply if composing
- *        a status report for the start of the init action)
  * @param cause  Cause of failure (only supply if status is 'failure')
  * @param exception Exception (only supply if status is 'failure')
  */
 async function createStatusReport(
     actionName: string,
     status: string,
-    startedAt: Date,
     cause?: string,
     exception?: string):
     Promise<StatusReport | undefined> {
 
     const commitOid = get_required_env_param('GITHUB_SHA');
     const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
+    const workflowRunID = parseInt(workflowRunIDStr, 10);
     const workflowName = get_required_env_param('GITHUB_WORKFLOW');
     let jobName = process.env['GITHUB_JOB'];
     if (!jobName) {
         jobName = '';
     }
     const languages = (await getLanguages()).sort().join(',');
-
-    const workflowRunID = parseInt(workflowRunIDStr, 10);
+    const startedAt = process.env[sharedEnv.CODEQL_ACTION_INIT_STARTED_AT];
+    if (!startedAt) {
+        throw new Error('Init action start date not recorded in CODEQL_ACTION_INIT_STARTED_AT');
+    }
 
     let statusReport: StatusReport = {
         workflow_run_id: workflowRunID,
@@ -214,7 +194,7 @@ async function createStatusReport(
         commit_oid: commitOid,
         action_name: actionName,
         action_oid: "unknown", // TODO decide if it's possible to fill this in
-        started_at: startedAt.toISOString(),
+        started_at: startedAt,
         status: status
     };
 
@@ -258,17 +238,17 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
 /**
  * Send a status report that an action is starting.
  *
- * If the action is `init` then this also records the start time and analysed
- * languages in the workspace, for retrieval when posting later status reports.
+ * If the action is `init` then this also records the start time in the environment,
+ * and ensures that the analysed languages are also recorded in the envirenment.
  *
  * Returns true unless a problem occurred and the action should abort.
  */
 export async function reportActionStarting(action: string): Promise<boolean> {
-    let startedAt = new Date();
     if (action === 'init') {
-        startedAt = writeInitStartedDate();
+        // Record the start time of the init action in the environment
+        core.exportVariable(sharedEnv.CODEQL_ACTION_INIT_STARTED_AT, new Date().toISOString());
     }
-    const statusReport = await createStatusReport(action, 'starting', startedAt);
+    const statusReport = await createStatusReport(action, 'starting');
     if (!statusReport) {
         return false;
     }
@@ -287,7 +267,7 @@ export async function reportActionStarting(action: string): Promise<boolean> {
 export async function reportActionFailed(action: string, cause?: string, exception?: string) {
     const languages = (await getLanguages()).sort().join(',');
     await sendStatusReport(
-        await createStatusReport(action, 'failure', readInitStartedDate(), cause, exception));
+        await createStatusReport(action, 'failure', cause, exception));
 }
 
 /**
@@ -298,5 +278,5 @@ export async function reportActionFailed(action: string, cause?: string, excepti
  */
 export async function reportActionSucceeded(action: string) {
     const languages = (await getLanguages()).sort().join(',');
-    await sendStatusReport(await createStatusReport(action, 'success', readInitStartedDate()));
+    await sendStatusReport(await createStatusReport(action, 'success'));
 }

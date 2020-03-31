@@ -94,11 +94,16 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
     core.startGroup('Analyzing ' + database);
 
     const sarifFile = path.join(sarifFolder, database + '.sarif');
-    await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
-      '--format=sarif-latest', '--output=' + sarifFile,
+    await exec.exec(codeqlCmd, [
+      'database',
+      'analyze',
+      path.join(databaseFolder, database),
+      '--format=sarif-latest',
+      '--output=' + sarifFile,
       '--no-sarif-add-snippets',
-      database + '-lgtm.qls',
-      ...config.additionalQueries]);
+      database + '-code-scanning.qls',
+      ...config.additionalQueries,
+    ]);
 
     let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
     appendSarifRuns(combinedSarif, sarifObject);

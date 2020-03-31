@@ -141,7 +141,7 @@ async function run() {
             return;
         }
 
-        const config = await configUtils.loadConfig();
+        const config = await configUtils.loadConfig(); // TODO remove unused stuff like this
 
         core.startGroup('Load language configuration');
 
@@ -153,8 +153,6 @@ async function run() {
             core.setFailed("Did not detect any languages to analyze. Please update input in workflow.");
             return;
         }
-
-        core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
 
         core.endGroup();
 

@@ -6,6 +6,8 @@ import consoleLogLevel from 'console-log-level';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import * as sharedEnv from './shared-environment';
+
 /**
  * Should the current action be aborted?
  *
@@ -101,22 +103,40 @@ async function getLanguagesInRepo(): Promise<string[]> {
 }
 
 /**
- * Get the specified languages, defaulting to the languages in the repo
- * that can be analysed if unspecified
+ * Get the languages to analyse.
+ *
+ * The result is obtained from the environment parameter CODEQL_ACTION_SCANNED_LANGUAGES
+ * if that has been set, otherwise it is obtained from the action input parameter
+ * 'languages' if that has been set, otherwise it is deduced as all languages in the
+ * repo that can be analysed.
+ *
+ * If the languages are obtained from either of the second choices, the
+ * CODEQL_ACTION_SCANNED_LANGUAGES environment variable will be exported with the
+ * deduced list.
  */
 export async function getLanguages(): Promise<string[]> {
 
-    // We will get the languages parameter first, but if it is not set,
-    // then we will get the languages in the repo from API
+    // Obtain from CODEQL_ACTION_SCANNED_LANGUAGES if set
+    const langsVar = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
+    if (langsVar) {
+        return langsVar.split(',')
+                       .map(x => x.trim())
+                       .filter(x => x.length > 0);
+    }
+    // Obtain from action input 'languages' if set
     let languages = core.getInput('languages', { required: false })
         .split(',')
         .map(x => x.trim())
         .filter(x => x.length > 0);
     core.info("Languages from configuration: " + JSON.stringify(languages));
+
     if (languages.length === 0) {
+        // Obtain languages as all languages in the repo that can be analysed
         languages = await getLanguagesInRepo();
         core.info("Automatically detected languages: " + JSON.stringify(languages));
     }
+
+    core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
 
     return languages;
 }
@@ -139,27 +159,6 @@ function writeInitStartedDate(): Date {
 function readInitStartedDate(): Date {
     const initStartedPath = path.resolve(workspaceFolder(), 'init-action-start-time');
     return new Date(fs.readFileSync(initStartedPath, 'utf8'));
-}
-
-/**
- * Record the languages that are to be analysed as a comma-separated string in
- * sorted order, in a file in the workspace.
- * Returns the string that was recorded.
- */
-async function writeAnalysedLanguages(): Promise<string> {
-    const languages = (await getLanguages()).sort().join(',');
-    const languagesPath = path.resolve(workspaceFolder(), 'init-action-languages');
-    fs.writeFileSync(languagesPath, languages, 'utf8');
-    return languages;
-}
-
-/**
- * Read the previously recorded languages of the init action.
- * Returns the languages that were previously recorded.
- */
-function readAnalysedLanguages(): string {
-    const languagesPath = path.resolve(workspaceFolder(), 'init-action-languages');
-    return fs.readFileSync(languagesPath, 'utf8');
 }
 
 interface StatusReport {
@@ -185,19 +184,16 @@ interface StatusReport {
  * @param status The status. Must be 'success', 'failure', or 'starting'
  * @param startedAt The start time of the init action (only supply if composing
  *        a status report for the start of the init action)
- * @param languages The languages to be analysed (only supply if composing a
- *        status report for the start of the init action)
  * @param cause  Cause of failure (only supply if status is 'failure')
  * @param exception Exception (only supply if status is 'failure')
  */
-function createStatusReport(
+async function createStatusReport(
     actionName: string,
     status: string,
     startedAt: Date,
-    languages: string,
     cause?: string,
     exception?: string):
-    StatusReport | undefined {
+    Promise<StatusReport | undefined> {
 
     const commitOid = get_required_env_param('GITHUB_SHA');
     const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
@@ -206,6 +202,7 @@ function createStatusReport(
     if (!jobName) {
         jobName = '';
     }
+    const languages = (await getLanguages()).sort().join(',');
 
     const workflowRunID = parseInt(workflowRunIDStr, 10);
 
@@ -268,15 +265,10 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
  */
 export async function reportActionStarting(action: string): Promise<boolean> {
     let startedAt = new Date();
-    let languages: string;
     if (action === 'init') {
         startedAt = writeInitStartedDate();
-        languages = await writeAnalysedLanguages();
-    } else {
-        languages = readAnalysedLanguages();
     }
-
-    const statusReport = createStatusReport(action, 'starting', startedAt, languages);
+    const statusReport = await createStatusReport(action, 'starting', startedAt);
     if (!statusReport) {
         return false;
     }
@@ -293,8 +285,9 @@ export async function reportActionStarting(action: string): Promise<boolean> {
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionFailed(action: string, cause?: string, exception?: string) {
+    const languages = (await getLanguages()).sort().join(',');
     await sendStatusReport(
-        createStatusReport(action, 'failure', readInitStartedDate(), readAnalysedLanguages(), cause, exception));
+        await createStatusReport(action, 'failure', readInitStartedDate(), cause, exception));
 }
 
 /**
@@ -304,5 +297,6 @@ export async function reportActionFailed(action: string, cause?: string, excepti
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionSucceeded(action: string) {
-    await sendStatusReport(createStatusReport(action, 'success', readInitStartedDate(), readAnalysedLanguages()));
+    const languages = (await getLanguages()).sort().join(',');
+    await sendStatusReport(await createStatusReport(action, 'success', readInitStartedDate()));
 }

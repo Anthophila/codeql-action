@@ -105,19 +105,19 @@ async function getLanguagesInRepo(): Promise<string[]> {
 /**
  * Get the languages to analyse.
  *
- * The result is obtained from the environment parameter CODEQL_ACTION_SCANNED_LANGUAGES
+ * The result is obtained from the environment parameter CODEQL_ACTION_LANGUAGES
  * if that has been set, otherwise it is obtained from the action input parameter
  * 'languages' if that has been set, otherwise it is deduced as all languages in the
  * repo that can be analysed.
  *
  * If the languages are obtained from either of the second choices, the
- * CODEQL_ACTION_SCANNED_LANGUAGES environment variable will be exported with the
+ * CODEQL_ACTION_LANGUAGES environment variable will be exported with the
  * deduced list.
  */
 export async function getLanguages(): Promise<string[]> {
 
-    // Obtain from CODEQL_ACTION_SCANNED_LANGUAGES if set
-    const langsVar = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
+    // Obtain from CODEQL_ACTION_LANGUAGES if set
+    const langsVar = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES];
     if (langsVar) {
         return langsVar.split(',')
                        .map(x => x.trim())

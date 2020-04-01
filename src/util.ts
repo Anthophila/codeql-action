@@ -265,9 +265,7 @@ export async function reportActionStarting(action: string): Promise<boolean> {
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionFailed(action: string, cause?: string, exception?: string) {
-    const languages = (await getLanguages()).sort().join(',');
-    await sendStatusReport(
-        await createStatusReport(action, 'failure', cause, exception));
+    await sendStatusReport(await createStatusReport(action, 'failure', cause, exception));
 }
 
 /**
@@ -277,6 +275,5 @@ export async function reportActionFailed(action: string, cause?: string, excepti
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionSucceeded(action: string) {
-    const languages = (await getLanguages()).sort().join(',');
     await sendStatusReport(await createStatusReport(action, 'success'));
 }

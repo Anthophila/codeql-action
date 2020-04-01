@@ -73,8 +73,6 @@ export async function upload_sarif(sarifFile: string) {
             "started_at": startedAt
         });
 
-        core.debug(payload); // TODO remove for final version
-
         core.info('Uploading results');
         const githubToken = core.getInput('token');
         const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);

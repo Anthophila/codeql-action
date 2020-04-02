@@ -172,10 +172,19 @@ async function createStatusReport(
     exception?: string):
     Promise<StatusReport | undefined> {
 
-    const commitOid = get_required_env_param('GITHUB_SHA');
-    const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
-    const workflowRunID = parseInt(workflowRunIDStr, 10);
-    const workflowName = get_required_env_param('GITHUB_WORKFLOW');
+    let commitOid = process.env['GITHUB_SHA'];
+    if (!commitOid) {
+        commitOid = '';
+    }
+    const workflowRunIDStr = process.env['GITHUB_RUN_ID'];
+    let workflowRunID = -1;
+    if (workflowRunIDStr) {
+        workflowRunID = parseInt(workflowRunIDStr, 10);
+    }
+    let workflowName = process.env['GITHUB_WORKFLOW'];
+    if (!workflowName) {
+        workflowName = '';
+    }
     let jobName = process.env['GITHUB_JOB'];
     if (!jobName) {
         jobName = '';

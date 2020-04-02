@@ -227,8 +227,12 @@ async function createStatusReport(
 
 /**
  * Send a status report to the code_scanning/analysis/status endpoint.
+ *
+ * Returns the status code of the response to the status request, or
+ * undefined if the given statusReport is undefined or no response was
+ * received.
  */
-async function sendStatusReport(statusReport: StatusReport | undefined) {
+async function sendStatusReport(statusReport: StatusReport | undefined): Promise<number | undefined> {
     if (statusReport) {
         const statusReportJSON = JSON.stringify(statusReport);
 
@@ -240,8 +244,11 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
         const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
                     + '/code-scanning/analysis/status';
         const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
+
+        return res.message.statusCode;
     }
 
+    return undefined;
 }
 
 /**
@@ -262,7 +269,18 @@ export async function reportActionStarting(action: string): Promise<boolean> {
         return false;
     }
 
-    await sendStatusReport(statusReport);
+    const statusCode = await sendStatusReport(statusReport);
+
+    // If the status report request fails, then the SARIF upload can be expected
+    // to fail too, so the action should fail to avoid wasting actions minutes.
+    if (statusCode === 403) {
+        core.setFailed('The repo on which this action is running is not opted-in to CodeQL code scanning.');
+        return false;
+    }
+    if (statusCode !== 200) {
+        core.setFailed('Not authorized to used the CodeQL code scanning feature on this repo.');
+        return false;
+    }
 
     return true;
 }

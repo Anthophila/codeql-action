@@ -126,12 +126,12 @@ export function hash(callback: hashCallback, input: string) {
 // Generate a hash callback function that updates the given result in-place
 // when it recieves a hash for the correct line number. Ignores hashes for other lines.
 function locationUpdateCallback(result: any, location: any): hashCallback {
-    // We expect the region section to be present, but it can be absent if the
-    // alert pertains to the entire file. In this case, we compute the fingerprint
-    // using the hash of the first line of the file.
-    let locationStartLine = 1;
-    if (location.physicalLocation.region) {
-        locationStartLine = location.physicalLocation.region.startLine;
+    let locationStartLine = location.physicalLocation?.region?.startLine;
+    if (locationStartLine === undefined) {
+        // We expect the region section to be present, but it can be absent if the
+        // alert pertains to the entire file. In this case, we compute the fingerprint
+        // using the hash of the first line of the file.
+        locationStartLine = 1;
     }
     return function (lineNumber: number, hash: string) {
         // Ignore hashes for lines that don't concern us

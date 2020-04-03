@@ -41,6 +41,32 @@ If you prefer to integrate this within an existing CI workflow, it should end up
     - uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
+CodeQL actions now supports adding a config file! With this file you can add more queries for CodeQL to execute. The queries must belong to a QL pack, and the QL pack can be located in your repository or any public repossitory. You can specify either a .ql file, a folder that contains different .ql files, a folder that contains various QL packs, and .qls file. The syntax for specifying the queries is the used in actions for adding steps.
+
+The configuration file can be located anywhere in your repo, and for enabling it you need to point at it add a config-file parameter to the init action:
+
+```yaml
+    - uses: Anthophila/codeql-action/codeql/init@master
+      with:
+        config-file: ./.github/codeql/codeql-config.yml
+```
+
+A config file looks like this:
+
+```yaml
+name: "My CodeQL config"
+
+queries: 
+  - name: In-repo queries (Runs the queries located in the my-queries folder of the repo)
+    uses: ./my-queries@master
+  - name: External Javascript QL pack (Runs a QL pack located in an external repo)
+    uses: Anthophila/javascript-querypack@master
+  - name: External query (Runs a single query located in an external QL pack) 
+    uses: Anthophila/python-querypack/show_ifs.ql@master 
+  - name: Select query suite (Runs a query suite, in this case located in an external QL pack)
+    uses: ./codeql-querypacks/complex-python-querypack/rootAndBar.qls
+```
+
 NB: The CodeQL actions are intended to run on `push` events, not on `pull_request` events. Since the latter would produce analyses of no use, the CodeQL actions all terminate themselves without doing any work if they are run on a PR.
 
 If you have any questions you can find us on Slack at #dsp-code-scanning.

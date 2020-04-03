@@ -170,7 +170,7 @@ async function createStatusReport(
     status: string,
     cause?: string,
     exception?: string):
-    Promise<StatusReport | undefined> {
+    Promise<StatusReport> {
 
     const commitOid = process.env['GITHUB_SHA'] || '';
     const workflowRunIDStr = process.env['GITHUB_RUN_ID'];
@@ -221,23 +221,19 @@ async function createStatusReport(
  * undefined if the given statusReport is undefined or no response was
  * received.
  */
-async function sendStatusReport(statusReport: StatusReport | undefined): Promise<number | undefined> {
-    if (statusReport) {
-        const statusReportJSON = JSON.stringify(statusReport);
+async function sendStatusReport(statusReport: StatusReport): Promise<number | undefined> {
+    const statusReportJSON = JSON.stringify(statusReport);
 
-        core.debug('Sending status report: ' + statusReportJSON);
+    core.debug('Sending status report: ' + statusReportJSON);
 
-        const githubToken = core.getInput('token');
-        const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
-        const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
-        const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
+    const githubToken = core.getInput('token');
+    const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
+    const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
+    const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
                     + '/code-scanning/analysis/status';
-        const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
+    const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
 
-        return res.message.statusCode;
-    }
-
-    return undefined;
+    return res.message?.statusCode;
 }
 
 /**
@@ -249,12 +245,7 @@ async function sendStatusReport(statusReport: StatusReport | undefined): Promise
  * Returns true unless a problem occurred and the action should abort.
  */
 export async function reportActionStarting(action: string): Promise<boolean> {
-    const statusReport = await createStatusReport(action, 'starting');
-    if (!statusReport) {
-        return false;
-    }
-
-    const statusCode = await sendStatusReport(statusReport);
+    const statusCode = await sendStatusReport(await createStatusReport(action, 'starting'));
 
     // If the status report request fails, then the SARIF upload can be expected
     // to fail too, so the action should fail to avoid wasting actions minutes.
@@ -277,9 +268,7 @@ export async function reportActionStarting(action: string): Promise<boolean> {
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionFailed(action: string, cause?: string, exception?: string) {
-    const languages = (await getLanguages()).sort().join(',');
-    await sendStatusReport(
-        await createStatusReport(action, 'failure', cause, exception));
+    await sendStatusReport(await createStatusReport(action, 'failure', cause, exception));
 }
 
 /**
@@ -289,6 +278,5 @@ export async function reportActionFailed(action: string, cause?: string, excepti
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionSucceeded(action: string) {
-    const languages = (await getLanguages()).sort().join(',');
     await sendStatusReport(await createStatusReport(action, 'success'));
 }

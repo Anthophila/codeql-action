@@ -118,7 +118,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
 
 async function run() {
   try {
-    if (util.should_abort('finish')) {
+    if (util.should_abort('finish') || !await util.reportActionStarting('finish')) {
       return;
     }
     const config = await configUtils.loadConfig();
@@ -150,7 +150,11 @@ async function run() {
 
   } catch (error) {
     core.setFailed(error.message);
+    await util.reportActionFailed('finish', error.message, error.stack);
+    return;
   }
+
+  await util.reportActionSucceeded('finish');
 }
 
 void run();

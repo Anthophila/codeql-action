@@ -219,4 +219,7 @@ async function run() {
     await util.reportActionSucceeded('init');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/init action failed: " + e);
+    console.log(e);
+});

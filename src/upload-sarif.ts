@@ -23,4 +23,7 @@ async function run() {
     await util.reportActionSucceeded('upload-sarif');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/upload-sarif action failed: " + e);
+    console.log(e);
+});

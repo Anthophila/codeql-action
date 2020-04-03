@@ -105,19 +105,19 @@ async function getLanguagesInRepo(): Promise<string[]> {
 /**
  * Get the languages to analyse.
  *
- * The result is obtained from the environment parameter CODEQL_ACTION_SCANNED_LANGUAGES
+ * The result is obtained from the environment parameter CODEQL_ACTION_LANGUAGES
  * if that has been set, otherwise it is obtained from the action input parameter
  * 'languages' if that has been set, otherwise it is deduced as all languages in the
  * repo that can be analysed.
  *
  * If the languages are obtained from either of the second choices, the
- * CODEQL_ACTION_SCANNED_LANGUAGES environment variable will be exported with the
+ * CODEQL_ACTION_LANGUAGES environment variable will be exported with the
  * deduced list.
  */
 export async function getLanguages(): Promise<string[]> {
 
-    // Obtain from CODEQL_ACTION_SCANNED_LANGUAGES if set
-    const langsVar = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
+    // Obtain from CODEQL_ACTION_LANGUAGES if set
+    const langsVar = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES];
     if (langsVar) {
         return langsVar.split(',')
                        .map(x => x.trim())
@@ -170,21 +170,19 @@ async function createStatusReport(
     status: string,
     cause?: string,
     exception?: string):
-    Promise<StatusReport | undefined> {
+    Promise<StatusReport> {
 
-    const commitOid = get_required_env_param('GITHUB_SHA');
-    const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
-    const workflowRunID = parseInt(workflowRunIDStr, 10);
-    const workflowName = get_required_env_param('GITHUB_WORKFLOW');
-    let jobName = process.env['GITHUB_JOB'];
-    if (!jobName) {
-        jobName = '';
+    const commitOid = process.env['GITHUB_SHA'] || '';
+    const workflowRunIDStr = process.env['GITHUB_RUN_ID'];
+    let workflowRunID = -1;
+    if (workflowRunIDStr) {
+        workflowRunID = parseInt(workflowRunIDStr, 10);
     }
+    const workflowName = process.env['GITHUB_WORKFLOW'] || '';
+    const jobName = process.env['GITHUB_JOB'] || '';
     const languages = (await getLanguages()).sort().join(',');
-    const startedAt = process.env[sharedEnv.CODEQL_ACTION_INIT_STARTED_AT];
-    if (!startedAt) {
-        throw new Error('Init action start date not recorded in CODEQL_ACTION_INIT_STARTED_AT');
-    }
+    const startedAt = process.env[sharedEnv.CODEQL_ACTION_STARTED_AT] || new Date().toISOString();
+    core.exportVariable(sharedEnv.CODEQL_ACTION_STARTED_AT, startedAt);
 
     let statusReport: StatusReport = {
         workflow_run_id: workflowRunID,
@@ -218,21 +216,24 @@ async function createStatusReport(
 
 /**
  * Send a status report to the code_scanning/analysis/status endpoint.
+ *
+ * Returns the status code of the response to the status request, or
+ * undefined if the given statusReport is undefined or no response was
+ * received.
  */
-async function sendStatusReport(statusReport: StatusReport | undefined) {
-    if (statusReport) {
-        const statusReportJSON = JSON.stringify(statusReport);
+async function sendStatusReport(statusReport: StatusReport): Promise<number | undefined> {
+    const statusReportJSON = JSON.stringify(statusReport);
 
-        core.debug('Sending status report: ' + statusReportJSON);
+    core.debug('Sending status report: ' + statusReportJSON);
 
-        const githubToken = core.getInput('token');
-        const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
-        const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
-        const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
+    const githubToken = core.getInput('token');
+    const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
+    const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
+    const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
                     + '/code-scanning/analysis/status';
-        const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
-    }
+    const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
 
+    return res.message?.statusCode;
 }
 
 /**
@@ -244,16 +245,22 @@ async function sendStatusReport(statusReport: StatusReport | undefined) {
  * Returns true unless a problem occurred and the action should abort.
  */
 export async function reportActionStarting(action: string): Promise<boolean> {
-    if (action === 'init') {
-        // Record the start time of the init action in the environment
-        core.exportVariable(sharedEnv.CODEQL_ACTION_INIT_STARTED_AT, new Date().toISOString());
-    }
-    const statusReport = await createStatusReport(action, 'starting');
-    if (!statusReport) {
+    const statusCode = await sendStatusReport(await createStatusReport(action, 'starting'));
+
+    // If the status report request fails with a 403 or a 404, then this is a deliberate
+    // message from the endpoint that the SARIF upload can be expected to fail too,
+    // so the action should fail to avoid wasting actions minutes.
+    //
+    // Other failure responses (or lack thereof) could be transitory and should not
+    // cause the action to fail.
+    if (statusCode === 403) {
+        core.setFailed('The repo on which this action is running is not opted-in to CodeQL code scanning.');
         return false;
     }
-
-    await sendStatusReport(statusReport);
+    if (statusCode === 404) {
+        core.setFailed('Not authorized to used the CodeQL code scanning feature on this repo.');
+        return false;
+    }
 
     return true;
 }
@@ -265,9 +272,7 @@ export async function reportActionStarting(action: string): Promise<boolean> {
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionFailed(action: string, cause?: string, exception?: string) {
-    const languages = (await getLanguages()).sort().join(',');
-    await sendStatusReport(
-        await createStatusReport(action, 'failure', cause, exception));
+    await sendStatusReport(await createStatusReport(action, 'failure', cause, exception));
 }
 
 /**
@@ -277,6 +282,5 @@ export async function reportActionFailed(action: string, cause?: string, excepti
  * this is likely to give a more useful duration when inspecting events.
  */
 export async function reportActionSucceeded(action: string) {
-    const languages = (await getLanguages()).sort().join(',');
     await sendStatusReport(await createStatusReport(action, 'success'));
 }

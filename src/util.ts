@@ -190,14 +190,14 @@ async function createStatusReport(
         jobName = '';
     }
     const languages = (await getLanguages()).sort().join(',');
-    let startedAt = process.env[sharedEnv.CODEQL_ACTION_INIT_STARTED_AT];
+    let startedAt = process.env[sharedEnv.CODEQL_ACTION_STARTED_AT];
     if (startedAt === undefined) {
         // If CODEQL_ACTION_INIT_STARTED_AT isn't defined, this almost certainly
         // means that the action is being invoked by a third-party that didn't
         // run the init action. In that case just record the current time so
         // that it represents the time when the action being invoked was started.
         startedAt = new Date().toISOString();
-        core.exportVariable(sharedEnv.CODEQL_ACTION_INIT_STARTED_AT, startedAt);
+        core.exportVariable(sharedEnv.CODEQL_ACTION_STARTED_AT, startedAt);
     }
 
     let statusReport: StatusReport = {
@@ -267,7 +267,7 @@ async function sendStatusReport(statusReport: StatusReport | undefined): Promise
 export async function reportActionStarting(action: string): Promise<boolean> {
     if (action === 'init') {
         // Record the start time of the init action in the environment
-        core.exportVariable(sharedEnv.CODEQL_ACTION_INIT_STARTED_AT, new Date().toISOString());
+        core.exportVariable(sharedEnv.CODEQL_ACTION_STARTED_AT, new Date().toISOString());
     }
     const statusReport = await createStatusReport(action, 'starting');
     if (!statusReport) {

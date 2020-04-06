@@ -163,3 +163,18 @@ test('addFingerprints', () => {
 
     expect(fingerprints.addFingerprints(input)).toBe(expected);
 });
+
+test('missingRegions', () => {
+    // Run an end-to-end test on a test file
+    let input = fs.readFileSync(__dirname + '/testdata/fingerprinting2.input.sarif').toString();
+    let expected = fs.readFileSync(__dirname + '/testdata/fingerprinting2.expected.sarif').toString();
+
+    // The test files are stored prettified, but addFingerprints outputs condensed JSON
+    input = JSON.stringify(JSON.parse(input));
+    expected = JSON.stringify(JSON.parse(expected));
+
+    // The URIs in the SARIF files resolve to files in the testdata directory
+    process.env['GITHUB_WORKSPACE'] = __dirname + '/testdata';
+
+    expect(fingerprints.addFingerprints(input)).toBe(expected);
+});

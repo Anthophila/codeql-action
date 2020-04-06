@@ -1,6 +1,5 @@
 import * as core from '@actions/core';
 
-import * as configUtils from './config-utils';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
 
@@ -10,8 +9,6 @@ async function run() {
     }
 
     try {
-        const config = await configUtils.loadConfig();
-
         const sarifFile = core.getInput('sarif_file');
         await upload_lib.upload_sarif(sarifFile);
     } catch (error) {
@@ -23,4 +20,7 @@ async function run() {
     await util.reportActionSucceeded('upload-sarif');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/upload-sarif action failed: " + e);
+    console.log(e);
+});

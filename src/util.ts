@@ -3,7 +3,6 @@ import * as http from '@actions/http-client';
 import * as auth from '@actions/http-client/auth';
 import * as octokit from '@octokit/rest';
 import consoleLogLevel from 'console-log-level';
-import * as fs from 'fs';
 import * as path from 'path';
 
 import * as sharedEnv from './shared-environment';

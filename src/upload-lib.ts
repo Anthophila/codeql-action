@@ -42,7 +42,7 @@ export async function upload_sarif(sarifFile: string) {
         const workflowRunIDStr = util.get_required_env_param('GITHUB_RUN_ID');
         const ref = util.get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
         const analysisName = util.get_required_env_param('GITHUB_WORKFLOW');
-        const startedAt = process.env[sharedEnv.CODEQL_ACTION_INIT_STARTED_AT];
+        const startedAt = process.env[sharedEnv.CODEQL_ACTION_STARTED_AT];
 
         let sarifPayload = fs.readFileSync(sarifFile).toString();
         sarifPayload = fingerprints.addFingerprints(sarifPayload);

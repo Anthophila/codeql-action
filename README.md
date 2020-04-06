@@ -102,13 +102,3 @@ dotnet build /p:UseSharedCompilation=false
 ```
 Version 3 works fine and does not require the additional flag.
 
-## Ruby version 2.6 instead of 2.5
-
-Add a section like
-```
-steps:
-- name: Set up Ruby 2.6
-  uses: actions/setup-ruby@v1
-  with:
-    version: 2.6.x
-```

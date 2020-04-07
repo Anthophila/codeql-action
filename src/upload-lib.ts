@@ -62,8 +62,21 @@ export function combineSarifFiles(sarifFiles: string[]): string {
     return JSON.stringify(combinedSarif);
 }
 
+// Uploads a single sarif file or a directory of sarif files
+// depending on what the path happens to refer to.
+export async function upload(input: string) {
+    if (fs.lstatSync(input).isDirectory()) {
+        const sarifFiles = fs.readdirSync(input)
+            .filter(f => f.endsWith(".sarif"))
+            .map(f => path.resolve(input, f));
+        await upload_files(sarifFiles);
+    } else {
+        await upload_files([input]);
+    }
+}
+
 // Uploads the given set of sarif files.
-export async function upload_sarif(sarifFiles: string[]) {
+async function upload_files(sarifFiles: string[]) {
     core.startGroup("Uploading results");
     try {
         // Check if any of the sarif files have been uploaded before. If any have been

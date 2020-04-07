@@ -48,18 +48,11 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
 }
 
 // Runs queries and returns a list of paths to sarif files
-async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<string[]> {
-  const databaseFolder = path.join(resultsFolder, 'db');
-
-  const sarifFolder = path.join(resultsFolder, 'sarif');
-  await io.mkdirP(sarifFolder);
-  const sarifFiles = [] as string[];
-
+async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder: string, config: configUtils.Config) {
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);
 
     const sarifFile = path.join(sarifFolder, database + '.sarif');
-    sarifFiles.push(sarifFile);
 
     await exec.exec(codeqlCmd, [
       'database',
@@ -75,8 +68,6 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
     core.endGroup();
   }
-
-  return sarifFiles;
 }
 
 async function run() {
@@ -89,23 +80,20 @@ async function run() {
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
-    const codeqlCmd = process.env[sharedEnv.CODEQL_ACTION_CMD] || 'CODEQL_ACTION_CMD';
-    const resultsFolder = process.env[sharedEnv.CODEQL_ACTION_RESULTS] || 'CODEQL_ACTION_RESULTS';
-    const databaseFolder = path.join(resultsFolder, 'db');
+    const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
+    const databaseFolder = util.get_required_env_param(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
+
+    const sarifFolder = core.getInput('output');
+    await io.mkdirP(sarifFolder);
 
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
     core.info('Analyzing database');
-    const sarifFiles = await runQueries(codeqlCmd, resultsFolder, config);
-
-    // Write analysis result to a file
-    const outputFile = core.getInput('output_file');
-    await io.mkdirP(path.dirname(outputFile));
-    fs.writeFileSync(outputFile, upload_lib.combineSarifFiles(sarifFiles));
+    await runQueries(codeqlCmd, databaseFolder, sarifFolder, config);
 
     if ('true' === core.getInput('upload')) {
-      await upload_lib.upload_sarif(sarifFiles);
+      await upload_lib.upload(sarifFolder);
     }
 
   } catch (error) {

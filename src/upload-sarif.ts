@@ -10,16 +10,7 @@ async function run() {
     }
 
     try {
-        const sarifDir = core.getInput('sarif_dir');
-        if (sarifDir) {
-            const sarifFiles = fs.readdirSync(sarifDir)
-                .filter(f => f.endsWith(".sarif"));
-            await upload_lib.upload_sarif(sarifFiles);
-
-        } else {
-            const sarifFile = core.getInput('sarif_file');
-            await upload_lib.upload_sarif([sarifFile]);
-        }
+        await upload_lib.upload(core.getInput('sarif_file'));
     } catch (error) {
         core.setFailed(error.message);
         await util.reportActionFailed('upload-sarif', error.message, error.stack);

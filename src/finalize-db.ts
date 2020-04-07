@@ -61,11 +61,16 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
     const sarifFile = path.join(sarifFolder, database + '.sarif');
     sarifFiles.push(sarifFile);
 
-    await exec.exec(codeqlCmd, ['database', 'analyze', path.join(databaseFolder, database),
-      '--format=sarif-latest', '--output=' + sarifFile,
+    await exec.exec(codeqlCmd, [
+      'database',
+      'analyze',
+      path.join(databaseFolder, database),
+      '--format=sarif-latest',
+      '--output=' + sarifFile,
       '--no-sarif-add-snippets',
-      database + '-lgtm.qls',
-      ...config.inRepoQueries]);
+      database + '-code-scanning.qls',
+      ...config.inRepoQueries,
+    ]);
 
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
     core.endGroup();
@@ -76,7 +81,7 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
 
 async function run() {
   try {
-    if (util.should_abort('finish')) {
+    if (util.should_abort('finish') || !await util.reportActionStarting('finish')) {
       return;
     }
     const config = await configUtils.loadConfig();
@@ -105,7 +110,14 @@ async function run() {
 
   } catch (error) {
     core.setFailed(error.message);
+    await util.reportActionFailed('finish', error.message, error.stack);
+    return;
   }
+
+  await util.reportActionSucceeded('finish');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/finish action failed: " + e);
+    console.log(e);
+});

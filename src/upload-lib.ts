@@ -9,6 +9,8 @@ import * as path from 'path';
 import zlib from 'zlib';
 
 import * as fingerprints from './fingerprints';
+import * as sharedEnv from './shared-environment';
+import * as util from './util';
 
 // Construct the location of the sentinel file for the given sarif file.
 // The returned location should be writable.
@@ -73,17 +75,11 @@ export async function upload_sarif(sarifFiles: string[]) {
             return;
         }
 
-        const commitOid = get_required_env_param('GITHUB_SHA');
-        const workflowRunIDStr = get_required_env_param('GITHUB_RUN_ID');
-        const ref = get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
-        const analysisName = get_required_env_param('GITHUB_WORKFLOW');
-
-        if (commitOid === undefined
-            || workflowRunIDStr === undefined
-            || ref === undefined
-            || analysisName === undefined) {
-            return;
-        }
+        const commitOid = util.get_required_env_param('GITHUB_SHA');
+        const workflowRunIDStr = util.get_required_env_param('GITHUB_RUN_ID');
+        const ref = util.get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
+        const analysisName = util.get_required_env_param('GITHUB_WORKFLOW');
+        const startedAt = process.env[sharedEnv.CODEQL_ACTION_STARTED_AT];
 
         core.debug("Uploading sarif files: " + JSON.stringify(sarifFiles));
         let sarifPayload = combineSarifFiles(sarifFiles);
@@ -112,6 +108,7 @@ export async function upload_sarif(sarifFiles: string[]) {
             "workflow_run_id": workflowRunID,
             "checkout_uri": checkoutURI,
             "environment": matrix,
+            "started_at": startedAt
         });
 
         core.info('Uploading results');
@@ -120,15 +117,16 @@ export async function upload_sarif(sarifFiles: string[]) {
         const client = new http.HttpClient('Code Scanning : Upload SARIF', [ph]);
         const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY'] + '/code-scanning/analysis';
         const res: http.HttpClientResponse = await client.put(url, payload);
+        const requestID = res.message.headers["x-github-request-id"];
 
         core.debug('response status: ' + res.message.statusCode);
         if (res.message.statusCode === 500) {
             // If the upload fails with 500 then we assume it is a temporary problem
             // with turbo-scan and not an error that the user has caused or can fix.
             // We avoid marking the job as failed to avoid breaking CI workflows.
-            core.error('Upload failed: ' + await res.readBody());
+            core.error('Upload failed (' + requestID + '): ' + await res.readBody());
         } else if (res.message.statusCode !== 202) {
-            core.setFailed('Upload failed: ' + await res.readBody());
+            core.setFailed('Upload failed (' + requestID + '): ' + await res.readBody());
         } else {
             core.info("Successfully uploaded results");
         }
@@ -142,14 +140,4 @@ export async function upload_sarif(sarifFiles: string[]) {
         core.setFailed(error.message);
     }
     core.endGroup();
-}
-
-// Get an environment parameter, and fail the action if it has no value
-function get_required_env_param(paramName: string): string | undefined {
-    const value = process.env[paramName];
-    if (value === undefined) {
-        core.setFailed(paramName + ' environment variable must be set');
-    }
-    core.debug(paramName + '=' + value);
-    return value;
 }

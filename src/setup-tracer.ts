@@ -1,11 +1,9 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
-import * as octokit from '@octokit/rest';
-import consoleLogLevel from 'console-log-level';
+import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
@@ -104,8 +102,8 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
         totalLines.push(...lines.slice(2));
     }
 
-    const newLogFilePath = path.resolve(workspaceFolder(), 'compound-build-tracer.log');
-    const spec = path.resolve(workspaceFolder(), 'compound-spec');
+    const newLogFilePath = path.resolve(util.workspaceFolder(), 'compound-build-tracer.log');
+    const spec = path.resolve(util.workspaceFolder(), 'compound-spec');
     const newSpecContent = [newLogFilePath, totalCount.toString(10), ...totalLines];
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
@@ -128,79 +126,15 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     return { env, spec };
 }
 
-function workspaceFolder(): string {
-    let workspaceFolder = process.env['RUNNER_WORKSPACE'];
-    if (!workspaceFolder)
-        workspaceFolder = path.resolve('..');
-
-    return workspaceFolder;
-}
-
-// Gets the set of languages in the current repository
-async function getLanguages(): Promise<string[]> {
-    let repo_nwo = process.env['GITHUB_REPOSITORY']?.split("/");
-    if (repo_nwo) {
-        let owner = repo_nwo[0];
-        let repo = repo_nwo[1];
-
-        core.debug(`GitHub repo ${owner} ${repo}`);
-        let ok = new octokit.Octokit({
-            auth: core.getInput('token'),
-            userAgent: "CodeQL Action",
-            log: consoleLogLevel({ level: "debug" })
-        });
-        const response = await ok.request("GET /repos/:owner/:repo/languages", ({
-            owner,
-            repo
-        }));
-
-        core.debug("Languages API response: " + JSON.stringify(response));
-        let languages = [] as string[];
-        if ("C" in response.data || "C++" in response.data) {
-            languages.push("cpp");
-        }
-        if ("Go" in response.data) {
-            languages.push("go");
-        }
-        if ("C#" in response.data) {
-            languages.push("csharp");
-        }
-        if ("Python" in response.data) {
-            languages.push("python");
-        }
-        if ("Java" in response.data) {
-            languages.push("java");
-        }
-        if ("JavaScript" in response.data || "TypeScript" in response.data) {
-            languages.push("javascript");
-        }
-        return languages;
-    } else {
-        return [];
-    }
-}
-
 async function run() {
     try {
-        if (util.should_abort('init')) {
+        if (util.should_abort('init') || !await util.reportActionStarting('init')) {
             return;
         }
 
-        const config = await configUtils.loadConfig();
-
         core.startGroup('Load language configuration');
 
-        // We will get the languages parameter first, but if it is not set,
-        // then we will get the languages in the repo from API
-        let languages = core.getInput('languages', { required: false })
-            .split(',')
-            .map(x => x.trim())
-            .filter(x => x.length > 0);
-        core.info("Languages from configuration: " + JSON.stringify(languages));
-        if (languages.length === 0) {
-            languages = await getLanguages();
-            core.info("Automatically detected languages: " + JSON.stringify(languages));
-        }
+        const languages = await util.getLanguages();
 
         // If the languages parameter was not given and no languages were
         // detected then fail here as this is a workflow configuration error.
@@ -209,14 +143,13 @@ async function run() {
             return;
         }
 
-        core.exportVariable(sharedEnv.CODEQL_ACTION_LANGUAGES, languages.join(','));
-
         core.endGroup();
 
         const sourceRoot = path.resolve();
 
         core.startGroup('Setup CodeQL tools');
         const codeqlSetup = await setuptools.setupCodeQL();
+        await exec.exec(codeqlSetup.cmd, ['version', '--format=json']);
         core.endGroup();
 
         // Forward Go flags
@@ -226,8 +159,9 @@ async function run() {
             core.warning("Passing the GOFLAGS env parameter to the codeql/init action is deprecated. Please move this to the codeql/finish action.");
         }
 
-        const codeqlResultFolder = path.resolve(workspaceFolder(), 'codeql_results');
+        const codeqlResultFolder = path.resolve(util.workspaceFolder(), 'codeql_results');
         const databaseFolder = path.resolve(codeqlResultFolder, 'db');
+        await io.mkdirP(databaseFolder);
 
         let tracedLanguages: { [key: string]: TracerConfig } = {};
         let scannedLanguages: string[] = [];
@@ -235,6 +169,7 @@ async function run() {
         // TODO: replace this code once CodeQL supports multi-language tracing
         for (let language of languages) {
             const languageDatabase = path.join(databaseFolder, language);
+
             // Init language database
             await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot]);
             // TODO: add better detection of 'traced languages' instead of using a hard coded list
@@ -278,7 +213,13 @@ async function run() {
 
     } catch (error) {
         core.setFailed(error.message);
+        await util.reportActionFailed('init', error.message, error.stack);
+        return;
     }
+    await util.reportActionSucceeded('init');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/init action failed: " + e);
+    console.log(e);
+});

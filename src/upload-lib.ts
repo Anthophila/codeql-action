@@ -9,6 +9,7 @@ import * as path from 'path';
 import zlib from 'zlib';
 
 import * as fingerprints from './fingerprints';
+import * as sharedEnv from './shared-environment';
 import * as util from './util';
 
 // Construct the location of the sentinel file for the given sarif file.
@@ -41,6 +42,7 @@ export async function upload_sarif(sarifFile: string) {
         const workflowRunIDStr = util.get_required_env_param('GITHUB_RUN_ID');
         const ref = util.get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
         const analysisName = util.get_required_env_param('GITHUB_WORKFLOW');
+        const startedAt = process.env[sharedEnv.CODEQL_ACTION_STARTED_AT];
 
         let sarifPayload = fs.readFileSync(sarifFile).toString();
         sarifPayload = fingerprints.addFingerprints(sarifPayload);
@@ -68,6 +70,7 @@ export async function upload_sarif(sarifFile: string) {
             "workflow_run_id": workflowRunID,
             "checkout_uri": checkoutURI,
             "environment": matrix,
+            "started_at": startedAt
         });
 
         core.info('Uploading results');

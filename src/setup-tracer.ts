@@ -4,6 +4,7 @@ import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
@@ -131,6 +132,10 @@ async function run() {
         if (util.should_abort('init') || !await util.reportActionStarting('init')) {
             return;
         }
+
+        // The config file MUST be parsed in the init action
+        // even if the config var is not used
+        const config = await configUtils.loadConfig();
 
         core.startGroup('Load language configuration');
 

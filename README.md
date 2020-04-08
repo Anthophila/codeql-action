@@ -122,7 +122,7 @@ Dependencies on public repositories should just work. If you have dependencies o
 ```
 before any codeql actions. A similar thing can also be done with a SSH key or deploy key.
 
-## C# using dotnet version 2 on linux
+### C# using dotnet version 2 on linux
 
 This unfortunately doesn't work properly unless `dotnet` is invoked with the `/p:UseSharedCompilation=false` flag. For example:
 ```
@@ -130,3 +130,6 @@ dotnet build /p:UseSharedCompilation=false
 ```
 Version 3 works fine and does not require the additional flag.
 
+## License
+
+This project is released under the [MIT License](LICENSE).

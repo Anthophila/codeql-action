@@ -16,13 +16,17 @@
     "@actions/io": "^1.0.1",
     "@actions/tool-cache": "^1.1.2",
     "@octokit/rest": "^17.1.0",
+    "bufferutil": "^4.0.1",
+    "canvas": "^2.6.1",
     "console-log-level": "^1.4.1",
     "file-url": "^3.0.0",
     "fs": "0.0.1-security",
     "js-yaml": "^3.13.1",
-    "md5": "^2.2.1",
+    "jsdom": "^15.2.1",
     "long": "^4.0.0",
+    "md5": "^2.2.1",
     "path": "^0.12.7",
+    "utf-8-validate": "^5.0.2",
     "zlib": "^1.0.5"
   },
   "devDependencies": {

@@ -60,6 +60,34 @@ If you prefer to integrate this within an existing CI workflow, it should end up
     - uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
+You can specify extra queries for CodeQL to execute using a config file. The queries must belong to a [QL pack](https://help.semmle.com/codeql/codeql-cli/reference/qlpack-overview.html) and can be in your repository or any public repository. You can choose a single .ql file, a folder containing multiple .ql files, or a .qls [query suite](https://help.semmle.com/codeql/codeql-cli/procedures/query-suites.html) file, or any combination of the above. To use queries from other repositories use the same syntax as when [using an action](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsuses).
+
+Use the config-file parameter of the codeql/init action to enable the configuration file. For example:
+
+```yaml
+    - uses: Anthophila/codeql-action/codeql/init@master
+      with:
+        config-file: ./.github/codeql/codeql-config.yml
+```
+
+A config file looks like this:
+
+```yaml
+name: "My CodeQL config"
+
+queries: 
+  - name: In-repo queries (Runs the queries located in the my-queries folder of the repo)
+    uses: ./my-queries
+  - name: External Javascript QL pack (Runs a QL pack located in an external repo)
+    uses: Anthophila/javascript-querypack@master
+  - name: External query (Runs a single query located in an external QL pack) 
+    uses: Anthophila/python-querypack/show_ifs.ql@master 
+  - name: Select query suite (Runs a query suites)
+    uses: ./codeql-querypacks/complex-python-querypack/rootAndBar.qls
+```
+
+Some example QL packs can be found here: https://github.com/Anthophila/python-querypack https://github.com/Anthophila/javascript-querypack
+
 NB: The CodeQL actions are intended to run on `push` events, not on `pull_request` events. Since the latter would produce analyses of no use, the CodeQL actions all terminate themselves without doing any work if they are run on a PR.
 
 If you have any questions you can find us on Slack at #dsp-code-scanning.

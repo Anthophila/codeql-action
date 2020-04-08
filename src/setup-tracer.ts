@@ -4,6 +4,7 @@ import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
@@ -132,6 +133,10 @@ async function run() {
             return;
         }
 
+        // The config file MUST be parsed in the init action
+        // even if the config var is not used
+        const config = await configUtils.loadConfig();
+
         core.startGroup('Load language configuration');
 
         const languages = await util.getLanguages();
@@ -219,4 +224,7 @@ async function run() {
     await util.reportActionSucceeded('init');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/init action failed: " + e);
+    console.log(e);
+});

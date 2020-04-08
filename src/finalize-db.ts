@@ -138,4 +138,7 @@ async function run() {
   await util.reportActionSucceeded('finish');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/finish action failed: " + e);
+    console.log(e);
+});

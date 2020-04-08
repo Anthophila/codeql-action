@@ -3,7 +3,8 @@
 To get Code Scanning results from CodeQL analysis on your repo you can use the following workflow as a template:
 
 ```yaml
-name: "CodeQL analysis"
+
+name: "Code Scanning - Action"
 
 on: 
   push:
@@ -11,19 +12,37 @@ on:
     - cron: '0 0 * * 0'
 
 jobs:
-  codeql:
+  CodeQL-Build:
 
     strategy:
       fail-fast: false
 
-    runs-on: ubuntu-latest # you can try windows too but macos is not yet supported
+    # CodeQL runs on ubuntu-latest and windows-latest
+    runs-on: ubuntu-latest 
 
     steps:
-    - uses: actions/checkout@v1
-      with:
-        submodules: recursive # omit this if your repository doesn't use submodules
-    - uses: Anthophila/codeql-action/codeql/init@master
-    - uses: Anthophila/codeql-action/codeql/finish@master
+    - name: Checkout repository
+      uses: actions/checkout@v2
+        
+    # Initializes the CodeQL tools for scanning. 
+    - name: Initialize CodeQL 
+      uses: Anthophila/codeql-action/codeql/init@master
+      # Override language selection by uncommenting this and choosing your languages
+      # with:
+      #   languages: go, javascript, csharp, python, cpp, java
+      
+      
+    # ℹ️ Command-line programs to run using the OS shell.
+    # 📚 https://git.io/JvXDl
+    # ✏️ Uncomment the following three lines and modify them (or add more) to
+    #    build your code if your project uses a compiled language (C/C++, C#, or
+    #    Java).
+    #- run: |
+    #   make bootstrap
+    #   make release
+      
+    - name: Perform CodeQL Analysis
+      uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
 If you prefer to integrate this within an existing CI workflow, it should end up looking something like this:
@@ -111,13 +130,3 @@ dotnet build /p:UseSharedCompilation=false
 ```
 Version 3 works fine and does not require the additional flag.
 
-## Ruby version 2.6 instead of 2.5
-
-Add a section like
-```
-steps:
-- name: Set up Ruby 2.6
-  uses: actions/setup-ruby@v1
-  with:
-    version: 2.6.x
-```

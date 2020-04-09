@@ -65,10 +65,9 @@ export async function upload(input: string) {
 async function upload_files(sarifFiles: string[]) {
     core.startGroup("Uploading results");
     try {
-        // Check if any of the sarif files have been uploaded before. If any have been
-        // uploaded before then abort uploading any more. This is perhaps not perfect
-        // behaviour but it should be fine. The case this is intended to catch is when
-        // the upload happens in both the finish and upload-sarif actions.
+        // Check if an upload has happened before. If so then abort.
+        // This is intended to catch when the finish and upload-sarif actions
+        // are used together, and then the upload-sarif action is invoked twice.
         const sentinelFile = await getSentinelFilePath();
         if (fs.existsSync(sentinelFile)) {
             core.info("Aborting as an upload has already happened from this job");

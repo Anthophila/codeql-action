@@ -164,8 +164,7 @@ async function run() {
             core.warning("Passing the GOFLAGS env parameter to the codeql/init action is deprecated. Please move this to the codeql/finish action.");
         }
 
-        const codeqlResultFolder = path.resolve(util.workspaceFolder(), 'codeql_results');
-        const databaseFolder = path.resolve(codeqlResultFolder, 'db');
+        const databaseFolder = path.resolve(util.workspaceFolder(), 'codeql_databases');
         await io.mkdirP(databaseFolder);
 
         let tracedLanguages: { [key: string]: TracerConfig } = {};
@@ -213,8 +212,8 @@ async function run() {
         }
 
         // TODO: make this a "private" environment variable of the action
-        core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
-        core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
+        core.exportVariable(sharedEnv.CODEQL_ACTION_DATABASE_DIR, databaseFolder);
+        core.exportVariable(sharedEnv.CODEQL_ACTION_CMD, codeqlSetup.cmd);
 
     } catch (error) {
         core.setFailed(error.message);

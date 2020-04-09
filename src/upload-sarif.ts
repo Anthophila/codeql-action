@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as fs from 'fs';
 
 import * as upload_lib from './upload-lib';
 import * as util from './util';
@@ -9,8 +10,7 @@ async function run() {
     }
 
     try {
-        const sarifFile = core.getInput('sarif_file');
-        await upload_lib.upload_sarif(sarifFile);
+        await upload_lib.upload(core.getInput('sarif_file'));
     } catch (error) {
         core.setFailed(error.message);
         await util.reportActionFailed('upload-sarif', error.message, error.stack);

@@ -47,7 +47,7 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-// Runs queries and returns a list of paths to sarif files
+// Runs queries and creates sarif files in the given folder
 async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder: string, config: configUtils.Config) {
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);

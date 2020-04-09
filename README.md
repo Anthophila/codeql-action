@@ -1,5 +1,7 @@
  # CodeQL Action
- This action runs GitHub's industry-leading static analysis engine, CodeQL, against a repository's source code to find security vulnerabilities. It then automatically uploads results to GitHub. CodeQL runs an extensible set of [queries](https://github.com/semmle/ql), which have been developed by the community and the [GitHub Security Lab](https://securitylab.github.com/) to find common vulnerabilities in your code. 
+This action runs GitHub's industry-leading static analysis engine, CodeQL, against a repository's source code to find security vulnerabilities. It then automatically uploads results to GitHub. CodeQL runs an extensible set of [queries](https://github.com/semmle/ql), which have been developed by the community and the [GitHub Security Lab](https://securitylab.github.com/) to find common vulnerabilities in your code. 
+ 
+[Sign up for the Advanced Security beta](https://github.com/features/security/advanced-security/signup)
  
  ## Usage
 

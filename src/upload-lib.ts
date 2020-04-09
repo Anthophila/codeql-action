@@ -12,9 +12,9 @@ import * as fingerprints from './fingerprints';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
 
-// Construct the location of the sentinel file for the given sarif file.
+// Construct the location of the sentinel file for detecting multiple uploads.
 // The returned location should be writable.
-async function getSentinelFilePath(sarifFile: string): Promise<string> {
+async function getSentinelFilePath(): Promise<string> {
     // Use the temp dir instead of placing next to the sarif file because of
     // issues with docker actions. The directory containing the sarif file
     // may not be writable by us.
@@ -22,21 +22,7 @@ async function getSentinelFilePath(sarifFile: string): Promise<string> {
     await io.mkdirP(uploadsTmpDir);
     // Hash the absolute path so we'll behave correctly in the unlikely
     // scenario a file is referenced twice with different paths.
-    return path.join(uploadsTmpDir, md5(fs.realpathSync(sarifFile)));
-}
-
-// Checks if any of the sarif files have been uploaded before.
-// The previous upload is detected because we create an extra file next to it.
-async function anyFilesAlreadyUploaded(sarifFiles: string[]): Promise<boolean> {
-    for (let sarifFile of sarifFiles) {
-        const alreadyUploadedSentinelFile = await getSentinelFilePath(sarifFile);
-        if (fs.existsSync(alreadyUploadedSentinelFile)) {
-            // Already uploaded
-            core.debug('"' + sarifFile + '" has already been uploaded');
-            return true;
-        }
-    }
-    return false;
+    return path.join(uploadsTmpDir, 'codeql-action-upload-sentinel');
 }
 
 // Takes a list of paths to sarif files and combines them together,
@@ -83,8 +69,9 @@ async function upload_files(sarifFiles: string[]) {
         // uploaded before then abort uploading any more. This is perhaps not perfect
         // behaviour but it should be fine. The case this is intended to catch is when
         // the upload happens in both the finish and upload-sarif actions.
-        if (await anyFilesAlreadyUploaded(sarifFiles)) {
-            core.info("Aborting: detected that SARIF files have already been uploaded");
+        const sentinelFile = await getSentinelFilePath();
+        if (fs.existsSync(sentinelFile)) {
+            core.info("Aborting as an upload has already happened from this job");
             return;
         }
 
@@ -144,10 +131,8 @@ async function upload_files(sarifFiles: string[]) {
             core.info("Successfully uploaded results");
         }
 
-        // Mark the sarif files as uploaded
-        for (let sarifFile of sarifFiles) {
-            fs.writeFileSync(await getSentinelFilePath(sarifFile), '');
-        }
+        // Mark that we have made an upload
+        fs.writeFileSync(sentinelFile, '');
 
     } catch (error) {
         core.setFailed(error.message);

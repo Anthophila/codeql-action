@@ -127,6 +127,11 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     return { env, spec };
 }
 
+function includeAndExcludeAnalysisPaths(config: configUtils.Config) {
+    core.exportVariable('LGTM_INDEX_INCLUDE', config.paths.join('\n'));
+    core.exportVariable('LGTM_INDEX_EXCLUDE', config.pathsIgnore.join('\n'));
+}
+
 async function run() {
     try {
         if (util.should_abort('init') || !await util.reportActionStarting('init')) {
@@ -140,7 +145,6 @@ async function run() {
         core.startGroup('Load language configuration');
 
         const languages = await util.getLanguages();
-
         // If the languages parameter was not given and no languages were
         // detected then fail here as this is a workflow configuration error.
         if (languages.length === 0) {
@@ -149,6 +153,8 @@ async function run() {
         }
 
         core.endGroup();
+
+        includeAndExcludeAnalysisPaths(config);
 
         const sourceRoot = path.resolve();
 

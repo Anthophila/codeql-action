@@ -64,11 +64,47 @@ async function checkoutExternalQueries(config: configUtils.Config) {
   }
 }
 
+async function resolveQueryLanguages(codeqlCmd: string, config: configUtils.Config): Promise<Map<string, string[]>> {
+  let resolveQueriesOutput = '';
+  const options = {
+    listeners: {
+      stdout: (data: Buffer) => {
+        resolveQueriesOutput += data.toString();
+      }
+    }
+  };
+
+  await exec.exec(
+    codeqlCmd, [
+      'resolve',
+      'queries',
+      ...config.additionalQueries,
+      '--format=bylanguage'
+    ],
+    options);
+
+  let res = new Map();
+
+  const resolveQueriesOutputObect = JSON.parse(resolveQueriesOutput);
+
+  const byLanguage = resolveQueriesOutputObect.byLanguage;
+  const languages = Object.keys(byLanguage);
+  for (const language of languages) {
+    const queries = Object.keys(byLanguage[language]);
+    res[language] = queries;
+  }
+
+  return res;
+}
+
 // Runs queries and creates sarif files in the given folder
 async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder: string, config: configUtils.Config) {
+  const queriesPerLanguage = await resolveQueryLanguages(codeqlCmd, config);
+
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);
 
+    const additionalQueries = queriesPerLanguage[database] || [];
     const sarifFile = path.join(sarifFolder, database + '.sarif');
 
     await exec.exec(codeqlCmd, [
@@ -79,7 +115,7 @@ async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder
       '--output=' + sarifFile,
       '--no-sarif-add-snippets',
       database + '-code-scanning.qls',
-      ...config.additionalQueries,
+      ...additionalQueries,
     ]);
 
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');

@@ -12,7 +12,9 @@ import javascript
 class ActionEntrypointFile extends File {
   ActionEntrypointFile() {
     exists(Module m | m.getPath() = this.getAbsolutePath() and
+       // This is quite a broad check and relies on the function name, but hopefully it'll be accurate enough
        m.getAStmt().getAChildExpr+().(CallExpr).getCalleeName() = "run") and
+    // Requiring the relative path to exist limits us to files in the code repository and avoid libraries
     exists(this.getRelativePath())
   }
 }

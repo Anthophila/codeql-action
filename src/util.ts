@@ -30,8 +30,8 @@ export function should_abort(actionName: string, requireInitActionHasRun: boolea
         return true;
     }
 
-    // If the init action is required, then check the time it started has been recorded.
-    if (requireInitActionHasRun && process.env[sharedEnv.CODE_ACTION_INIT_COMPLETED] === undefined) {
+    // If the init action is required, then check the it completed successfully.
+    if (requireInitActionHasRun && process.env[sharedEnv.CODEQL_ACTION_INIT_COMPLETED] === undefined) {
         core.setFailed('The CodeQL ' + actionName + ' action cannot be used unless the CodeQL init action is run first. Aborting.');
         return true;
     }

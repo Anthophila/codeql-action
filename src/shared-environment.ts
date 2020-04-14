@@ -10,4 +10,4 @@ export const CODEQL_ACTION_SCANNED_LANGUAGES = 'CODEQL_ACTION_SCANNED_LANGUAGES'
 // rather that the init action.
 export const CODEQL_ACTION_STARTED_AT = 'CODEQL_ACTION_STARTED_AT';
 // Populated when the init action completes successfully
-export const CODE_ACTION_INIT_COMPLETED = 'CODE_ACTION_INIT_COMPLETED';
+export const CODEQL_ACTION_INIT_COMPLETED = 'CODEQL_ACTION_INIT_COMPLETED';

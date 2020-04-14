@@ -220,7 +220,7 @@ async function run() {
         await util.reportActionFailed('init', error.message, error.stack);
         return;
     }
-    core.exportVariable(sharedEnv.CODE_ACTION_INIT_COMPLETED, 'true');
+    core.exportVariable(sharedEnv.CODEQL_ACTION_INIT_COMPLETED, 'true');
     await util.reportActionSucceeded('init');
 }
 

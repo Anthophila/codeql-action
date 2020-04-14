@@ -9,3 +9,5 @@ export const CODEQL_ACTION_SCANNED_LANGUAGES = 'CODEQL_ACTION_SCANNED_LANGUAGES'
 // then this variable will be assigned the start time of the action invoked
 // rather that the init action.
 export const CODEQL_ACTION_STARTED_AT = 'CODEQL_ACTION_STARTED_AT';
+// Populated when the init action completes successfully
+export const CODE_ACTION_INIT_COMPLETED = 'CODE_ACTION_INIT_COMPLETED';

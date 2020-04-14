@@ -5,7 +5,7 @@ import * as upload_lib from './upload-lib';
 import * as util from './util';
 
 async function run() {
-    if (util.should_abort('upload-sarif') || !await util.reportActionStarting('upload-sarif')) {
+    if (util.should_abort('upload-sarif', false) || !await util.reportActionStarting('upload-sarif')) {
         return;
     }
 

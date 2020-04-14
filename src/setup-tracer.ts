@@ -129,7 +129,7 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
 async function run() {
     try {
-        if (util.should_abort('init') || !await util.reportActionStarting('init')) {
+        if (util.should_abort('init', false) || !await util.reportActionStarting('init')) {
             return;
         }
 
@@ -220,6 +220,7 @@ async function run() {
         await util.reportActionFailed('init', error.message, error.stack);
         return;
     }
+    core.exportVariable(sharedEnv.CODE_ACTION_INIT_COMPLETED, 'true');
     await util.reportActionSucceeded('init');
 }
 

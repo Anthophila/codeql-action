@@ -72,7 +72,7 @@ async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder
 
 async function run() {
   try {
-    if (util.should_abort('finish') || !await util.reportActionStarting('finish')) {
+    if (util.should_abort('finish', true) || !await util.reportActionStarting('finish')) {
       return;
     }
     const config = await configUtils.loadConfig();

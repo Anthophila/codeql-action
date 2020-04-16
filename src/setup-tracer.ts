@@ -164,6 +164,10 @@ async function run() {
             core.warning("Passing the GOFLAGS env parameter to the codeql/init action is deprecated. Please move this to the codeql/finish action.");
         }
 
+        // Setup CODEQL_RAM flag (todo improve this https://github.com/github/dsp-code-scanning/issues/935)
+        const codeqlRam = process.env['CODEQL_RAM'] || '6500';
+        core.exportVariable('CODEQL_RAM', codeqlRam);
+
         const databaseFolder = path.resolve(util.workspaceFolder(), 'codeql_databases');
         await io.mkdirP(databaseFolder);
 

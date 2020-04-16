@@ -65,33 +65,47 @@ async function checkoutExternalQueries(config: configUtils.Config) {
 }
 
 async function resolveQueryLanguages(codeqlCmd: string, config: configUtils.Config): Promise<Map<string, string[]>> {
-  let resolveQueriesOutput = '';
-  const options = {
-    listeners: {
-      stdout: (data: Buffer) => {
-        resolveQueriesOutput += data.toString();
-      }
-    }
-  };
-
-  await exec.exec(
-    codeqlCmd, [
-      'resolve',
-      'queries',
-      ...config.additionalQueries,
-      '--format=bylanguage'
-    ],
-    options);
-
   let res = new Map();
 
-  const resolveQueriesOutputObect = JSON.parse(resolveQueriesOutput);
+  if (config.additionalQueries.length !== 0) {
+    let resolveQueriesOutput = '';
+    const options = {
+      listeners: {
+        stdout: (data: Buffer) => {
+          resolveQueriesOutput += data.toString();
+        }
+      }
+    };
 
-  const byLanguage = resolveQueriesOutputObect.byLanguage;
-  const languages = Object.keys(byLanguage);
-  for (const language of languages) {
-    const queries = Object.keys(byLanguage[language]);
-    res[language] = queries;
+    await exec.exec(
+      codeqlCmd, [
+        'resolve',
+        'queries',
+        ...config.additionalQueries,
+        '--format=bylanguage'
+      ],
+      options);
+
+    const resolveQueriesOutputObject = JSON.parse(resolveQueriesOutput);
+
+    const byLanguage = resolveQueriesOutputObject.byLanguage;
+    const languages = Object.keys(byLanguage);
+    for (const language of languages) {
+      const queries = Object.keys(byLanguage[language]);
+      res[language] = queries;
+    }
+
+    const noDeclaredLanguage = resolveQueriesOutputObject.noDeclaredLanguage;
+    const noDeclaredLanguageQueries = Object.keys(noDeclaredLanguage);
+    if (noDeclaredLanguageQueries.length !== 0) {
+      core.warning('Some queries do not declare a language:\n' + noDeclaredLanguageQueries.join('\n'));
+    }
+
+    const multipleDeclaredLanguages = resolveQueriesOutputObject.multipleDeclaredLanguages;
+    const multipleDeclaredLanguagesQueries = Object.keys(multipleDeclaredLanguages);
+    if (multipleDeclaredLanguagesQueries.length !== 0) {
+      core.warning('Some queries declare multiple languages:\n' + multipleDeclaredLanguagesQueries.join('\n'));
+    }
   }
 
   return res;

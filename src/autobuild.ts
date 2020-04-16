@@ -6,44 +6,41 @@ import * as sharedEnv from './shared-environment';
 import * as util from './util';
 
 async function run() {
-  try {
-    if (util.should_abort('autobuild')) {
-      return;
-    }
-
-    // Attempt to find a language to autobuild
-    // We want pick the dominant language in the repo from the ones we're able to build
-    // Assume the first language we heard about
-    const language = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES]?.split(',')[0];
-
-    if (!language) {
-      core.info("None of the languages in this project require extra build steps");
-      return;
-    }
-
-    core.startGroup('Attempting to automatically build project in ' + language);
-    // TODO: share config accross actions better via env variables
-    const codeqlCmd = process.env[sharedEnv.CODEQL_ACTION_CMD];
-    if (!codeqlCmd) {
-      throw "Required environment variabled " + sharedEnv.CODEQL_ACTION_CMD + "not set. Did you run the init action?";
-    }
-
-    const cmdName = process.platform === 'win32' ? 'autobuild.cmd' : 'autobuild.sh';
-    const autobuildCmd = path.join(path.dirname(codeqlCmd), language, 'tools', cmdName);
-
-
-    // Update JAVA_TOOL_OPTIONS to contain '-Dhttp.keepAlive=false'
-    // This is because of an issue with Azure pipelines timing out connections after 4 minutes
-    // and Maven not properly handling closed connections
-    // Otherwise long build processes will timeout when pulling down Java packages
-    // https://developercommunity.visualstudio.com/content/problem/292284/maven-hosted-agent-connection-timeout.html
-    let javaToolOptions = process.env['JAVA_TOOL_OPTIONS'] || "";
-    process.env['JAVA_TOOL_OPTIONS'] = [...javaToolOptions.split(/\s+/), '-Dhttp.keepAlive=false', '-Dmaven.wagon.http.pool=false'].join(' ');
-
-    await exec.exec(autobuildCmd);
-    core.endGroup();
-  } catch (error) {
-    core.setFailed(error.message);
+  if (util.should_abort('autobuild', true)) {
+    return;
   }
+
+  // Attempt to find a language to autobuild
+  // We want pick the dominant language in the repo from the ones we're able to build
+  // Assume the first language we heard about
+  const language = process.env[sharedEnv.CODEQL_ACTION_TRACED_LANGUAGES]?.split(',')[0];
+
+  if (!language) {
+    core.info("None of the languages in this project require extra build steps");
+    return;
+  }
+
+  core.startGroup('Attempting to automatically build project in ' + language);
+  // TODO: share config accross actions better via env variables
+  const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
+
+  const cmdName = process.platform === 'win32' ? 'autobuild.cmd' : 'autobuild.sh';
+  const autobuildCmd = path.join(path.dirname(codeqlCmd), language, 'tools', cmdName);
+
+
+  // Update JAVA_TOOL_OPTIONS to contain '-Dhttp.keepAlive=false'
+  // This is because of an issue with Azure pipelines timing out connections after 4 minutes
+  // and Maven not properly handling closed connections
+  // Otherwise long build processes will timeout when pulling down Java packages
+  // https://developercommunity.visualstudio.com/content/problem/292284/maven-hosted-agent-connection-timeout.html
+  let javaToolOptions = process.env['JAVA_TOOL_OPTIONS'] || "";
+  process.env['JAVA_TOOL_OPTIONS'] = [...javaToolOptions.split(/\s+/), '-Dhttp.keepAlive=false', '-Dmaven.wagon.http.pool=false'].join(' ');
+
+  await exec.exec(autobuildCmd);
+  core.endGroup();
 }
-void run();
+
+run().catch(e => {
+  core.setFailed("codeql/autobuild action failed: " + e);
+  console.log(e);
+});

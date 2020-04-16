@@ -26,6 +26,13 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
         }
       });
 
+      // Set up python environment
+      if (language === 'python') {
+        const pythonSetupScript = path.resolve(JSON.parse(extractorPath), 'tools', 'setup.py');
+        await exec.exec('python', [pythonSetupScript]);
+        core.endGroup();
+      }
+
       // Set trace command
       const ext = process.platform === 'win32' ? '.cmd' : '.sh';
       const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);
@@ -125,6 +132,6 @@ async function run() {
 }
 
 run().catch(e => {
-    core.setFailed("codeql/finish action failed: " + e);
-    console.log(e);
+  core.setFailed("codeql/finish action failed: " + e);
+  console.log(e);
 });

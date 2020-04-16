@@ -6,7 +6,7 @@ To get Code Scanning results from CodeQL analysis on your repo you can use the f
 
 name: "Code Scanning - Action"
 
-on: 
+on:
   push:
   schedule:
     - cron: '0 0 * * 0'
@@ -17,47 +17,57 @@ jobs:
     strategy:
       fail-fast: false
 
+
     # CodeQL runs on ubuntu-latest and windows-latest
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-        
-    # Initializes the CodeQL tools for scanning. 
-    - name: Initialize CodeQL 
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
       uses: Anthophila/codeql-action/codeql/init@master
       # Override language selection by uncommenting this and choosing your languages
       # with:
       #   languages: go, javascript, csharp, python, cpp, java
-      
-      
+
+    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
+    # If this step fails, then you should remove it and run the build manually (see bellow)
+    # custom build steps.
+    - name: Autobuild
+      uses: Anthophila/codeql-action/codeql/autobuild@master
+
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
-    # ✏️ Uncomment the following three lines and modify them (or add more) to
-    #    build your code if your project uses a compiled language (C/C++, C#, or
-    #    Java).
+
+    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
+    #    and modify them (or add more) to build your code if your project
+    #    uses a compiled language
+
     #- run: |
     #   make bootstrap
     #   make release
-      
+
     - name: Perform CodeQL Analysis
       uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
 If you prefer to integrate this within an existing CI workflow, it should end up looking something like this:
+
 ```yaml
-...
-    - uses: Anthophila/codeql-action/codeql/init@master
+    - name: Initialize CodeQL
+      uses: Anthophila/codeql-action/codeql/init@master
       with:
         languages: go, javascript
 
     # Here is where you build your code
-    - run: |  
+    - run: |
         make bootstrap
         make release
 
-    - uses: Anthophila/codeql-action/codeql/finish@master
+    - name: Perform CodeQL Analysis
+      uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
 You can specify extra queries for CodeQL to execute using a config file. The queries must belong to a [QL pack](https://help.semmle.com/codeql/codeql-cli/reference/qlpack-overview.html) and can be in your repository or any public repository. You can choose a single .ql file, a folder containing multiple .ql files, or a .qls [query suite](https://help.semmle.com/codeql/codeql-cli/procedures/query-suites.html) file, or any combination of the above. To use queries from other repositories use the same syntax as when [using an action](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsuses).
@@ -75,13 +85,13 @@ A config file looks like this:
 ```yaml
 name: "My CodeQL config"
 
-queries: 
+queries:
   - name: In-repo queries (Runs the queries located in the my-queries folder of the repo)
     uses: ./my-queries
   - name: External Javascript QL pack (Runs a QL pack located in an external repo)
     uses: Anthophila/javascript-querypack@master
-  - name: External query (Runs a single query located in an external QL pack) 
-    uses: Anthophila/python-querypack/show_ifs.ql@master 
+  - name: External query (Runs a single query located in an external QL pack)
+    uses: Anthophila/python-querypack/show_ifs.ql@master
   - name: Select query suite (Runs a query suites)
     uses: ./codeql-querypacks/complex-python-querypack/rootAndBar.qls
 ```

@@ -25,7 +25,7 @@ async function run() {
 
   core.startGroup(`Attempting to automatically build ${language} code`);
   // TODO: share config accross actions better via env variables
-  const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
+  const codeqlCmd = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_CMD);
 
   const cmdName = process.platform === 'win32' ? 'autobuild.cmd' : 'autobuild.sh';
   const autobuildCmd = path.join(path.dirname(codeqlCmd), language, 'tools', cmdName);

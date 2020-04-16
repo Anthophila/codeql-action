@@ -9,22 +9,6 @@ import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
 
-interface SARIFFile {
-  version: string | null;
-  runs: any[];
-}
-
-function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
-  // Check SARIF version
-  if (combinedSarif.version === null) {
-    combinedSarif.version = newSarifRuns.version;
-  } else if (combinedSarif.version !== newSarifRuns.version) {
-    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
-  }
-
-  combinedSarif.runs.push(...newSarifRuns.runs);
-}
-
 async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
   // Create db for scanned languages
   const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
@@ -80,21 +64,13 @@ async function checkoutExternalQueries(config: configUtils.Config) {
   }
 }
 
-async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<SARIFFile> {
-  const databaseFolder = path.join(resultsFolder, 'db');
-
-  let combinedSarif: SARIFFile = {
-    version: null,
-    runs: []
-  };
-
-  const sarifFolder = path.join(resultsFolder, 'sarif');
-  await io.mkdirP(sarifFolder);
-
+// Runs queries and creates sarif files in the given folder
+async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder: string, config: configUtils.Config) {
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);
 
     const sarifFile = path.join(sarifFolder, database + '.sarif');
+
     await exec.exec(codeqlCmd, [
       'database',
       'analyze',
@@ -106,19 +82,14 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
       ...config.additionalQueries,
     ]);
 
-    let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
-    appendSarifRuns(combinedSarif, sarifObject);
-
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
     core.endGroup();
   }
-
-  return combinedSarif;
 }
 
 async function run() {
   try {
-    if (util.should_abort('finish') || !await util.reportActionStarting('finish')) {
+    if (util.should_abort('finish', true) || !await util.reportActionStarting('finish')) {
       return;
     }
     const config = await configUtils.loadConfig();
@@ -126,9 +97,11 @@ async function run() {
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
-    const codeqlCmd = process.env[sharedEnv.CODEQL_ACTION_CMD] || 'CODEQL_ACTION_CMD';
-    const resultsFolder = process.env[sharedEnv.CODEQL_ACTION_RESULTS] || 'CODEQL_ACTION_RESULTS';
-    const databaseFolder = path.join(resultsFolder, 'db');
+    const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
+    const databaseFolder = util.get_required_env_param(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
+
+    const sarifFolder = core.getInput('output');
+    await io.mkdirP(sarifFolder);
 
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
@@ -136,16 +109,10 @@ async function run() {
     await checkoutExternalQueries(config);
 
     core.info('Analyzing database');
-    const sarifResults = await runQueries(codeqlCmd, resultsFolder, config);
-    const sarifPayload = JSON.stringify(sarifResults);
-
-    // Write analysis result to a file
-    const outputFile = core.getInput('output_file');
-    await io.mkdirP(path.dirname(outputFile));
-    fs.writeFileSync(outputFile, sarifPayload);
+    await runQueries(codeqlCmd, databaseFolder, sarifFolder, config);
 
     if ('true' === core.getInput('upload')) {
-      await upload_lib.upload_sarif(outputFile);
+      await upload_lib.upload(sarifFolder);
     }
 
   } catch (error) {
@@ -157,4 +124,7 @@ async function run() {
   await util.reportActionSucceeded('finish');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/finish action failed: " + e);
+    console.log(e);
+});

@@ -4,6 +4,7 @@ import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
@@ -128,9 +129,13 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
 async function run() {
     try {
-        if (util.should_abort('init') || !await util.reportActionStarting('init')) {
+        if (util.should_abort('init', false) || !await util.reportActionStarting('init')) {
             return;
         }
+
+        // The config file MUST be parsed in the init action
+        // even if the config var is not used
+        const config = await configUtils.loadConfig();
 
         core.startGroup('Load language configuration');
 
@@ -159,8 +164,11 @@ async function run() {
             core.warning("Passing the GOFLAGS env parameter to the codeql/init action is deprecated. Please move this to the codeql/finish action.");
         }
 
-        const codeqlResultFolder = path.resolve(util.workspaceFolder(), 'codeql_results');
-        const databaseFolder = path.resolve(codeqlResultFolder, 'db');
+        // Setup CODEQL_RAM flag (todo improve this https://github.com/github/dsp-code-scanning/issues/935)
+        const codeqlRam = process.env['CODEQL_RAM'] || '6500';
+        core.exportVariable('CODEQL_RAM', codeqlRam);
+
+        const databaseFolder = path.resolve(util.workspaceFolder(), 'codeql_databases');
         await io.mkdirP(databaseFolder);
 
         let tracedLanguages: { [key: string]: TracerConfig } = {};
@@ -208,15 +216,19 @@ async function run() {
         }
 
         // TODO: make this a "private" environment variable of the action
-        core.exportVariable('CODEQL_ACTION_RESULTS', codeqlResultFolder);
-        core.exportVariable('CODEQL_ACTION_CMD', codeqlSetup.cmd);
+        core.exportVariable(sharedEnv.CODEQL_ACTION_DATABASE_DIR, databaseFolder);
+        core.exportVariable(sharedEnv.CODEQL_ACTION_CMD, codeqlSetup.cmd);
 
     } catch (error) {
         core.setFailed(error.message);
         await util.reportActionFailed('init', error.message, error.stack);
         return;
     }
+    core.exportVariable(sharedEnv.CODEQL_ACTION_INIT_COMPLETED, 'true');
     await util.reportActionSucceeded('init');
 }
 
-void run();
+run().catch(e => {
+    core.setFailed("codeql/init action failed: " + e);
+    console.log(e);
+});

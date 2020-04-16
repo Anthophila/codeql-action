@@ -67,6 +67,16 @@ export function get_required_env_param(paramName: string): string {
  * Gets the set of languages in the current repository
  */
 async function getLanguagesInRepo(): Promise<string[]> {
+    // Translate between GitHub's API names for languages and ours
+    const codeqlLanguages = {
+        'C': 'cpp',
+        'C++': 'cpp',
+        'C#': 'csharp',
+        'Go': 'go',
+        'Java': 'java',
+        'JavaScript': 'javascript',
+        'TypeScript': 'javascript'
+    };
     let repo_nwo = process.env['GITHUB_REPOSITORY']?.split("/");
     if (repo_nwo) {
         let owner = repo_nwo[0];
@@ -84,26 +94,18 @@ async function getLanguagesInRepo(): Promise<string[]> {
         }));
 
         core.debug("Languages API response: " + JSON.stringify(response));
-        let languages = [] as string[];
-        if ("C" in response.data || "C++" in response.data) {
-            languages.push("cpp");
+
+        // The GitHub API is going to return languages in order of popularity,
+        // When we pick a language to autobuild we want to pick the most popular traced language
+        // Since sets in javascript maintain insertion order, using a set here and then splatting it
+        // into an array gives us an array of languages ordered by popularity
+        let languages: Set<string> = new Set();
+        for (let lang in response.data) {
+            if (lang in codeqlLanguages) {
+                languages.add(codeqlLanguages[lang]);
+            }
         }
-        if ("Go" in response.data) {
-            languages.push("go");
-        }
-        if ("C#" in response.data) {
-            languages.push("csharp");
-        }
-        if ("Python" in response.data) {
-            languages.push("python");
-        }
-        if ("Java" in response.data) {
-            languages.push("java");
-        }
-        if ("JavaScript" in response.data || "TypeScript" in response.data) {
-            languages.push("javascript");
-        }
-        return languages;
+        return [...languages];
     } else {
         return [];
     }
@@ -127,8 +129,8 @@ export async function getLanguages(): Promise<string[]> {
     const langsVar = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES];
     if (langsVar) {
         return langsVar.split(',')
-                       .map(x => x.trim())
-                       .filter(x => x.length > 0);
+            .map(x => x.trim())
+            .filter(x => x.length > 0);
     }
     // Obtain from action input 'languages' if set
     let languages = core.getInput('languages', { required: false })
@@ -237,7 +239,7 @@ async function sendStatusReport(statusReport: StatusReport): Promise<number | un
     const ph: auth.BearerCredentialHandler = new auth.BearerCredentialHandler(githubToken);
     const client = new http.HttpClient('Code Scanning : Status Report', [ph]);
     const url = 'https://api.github.com/repos/' + process.env['GITHUB_REPOSITORY']
-                    + '/code-scanning/analysis/status';
+        + '/code-scanning/analysis/status';
     const res: http.HttpClientResponse = await client.put(url, statusReportJSON);
 
     return res.message?.statusCode;

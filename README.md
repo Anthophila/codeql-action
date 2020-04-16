@@ -11,7 +11,7 @@ To get code scanning results from CodeQL analysis on your repo you can use the f
 
 name: "Code Scanning - Action"
 
-on: 
+on:
   push:
   schedule:
     - cron: '0 0 * * 0'
@@ -22,47 +22,57 @@ jobs:
     strategy:
       fail-fast: false
 
+
     # CodeQL runs on ubuntu-latest and windows-latest
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-        
-    # Initializes the CodeQL tools for scanning. 
-    - name: Initialize CodeQL 
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
       uses: Anthophila/codeql-action/codeql/init@master
       # Override language selection by uncommenting this and choosing your languages
       # with:
       #   languages: go, javascript, csharp, python, cpp, java
-      
-      
+
+    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
+    # If this step fails, then you should remove it and run the build manually (see bellow)
+    # custom build steps.
+    - name: Autobuild
+      uses: Anthophila/codeql-action/codeql/autobuild@master
+
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
-    # ✏️ Uncomment the following three lines and modify them (or add more) to
-    #    build your code if your project uses a compiled language (C/C++, C#, or
-    #    Java).
+
+    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
+    #    and modify them (or add more) to build your code if your project
+    #    uses a compiled language
+
     #- run: |
     #   make bootstrap
     #   make release
-      
+
     - name: Perform CodeQL Analysis
       uses: Anthophila/codeql-action/codeql/finish@master
 ```
 
 If you prefer to integrate this within an existing CI workflow, it should end up looking something like this:
+
 ```yaml
-...
-    - uses: Anthophila/codeql-action/codeql/init@master
+    - name: Initialize CodeQL
+      uses: Anthophila/codeql-action/codeql/init@master
       with:
         languages: go, javascript
 
     # Here is where you build your code
-    - run: |  
+    - run: |
         make bootstrap
         make release
 
-    - uses: Anthophila/codeql-action/codeql/finish@master
+    - name: Perform CodeQL Analysis
+      uses: Anthophila/codeql-action/codeql/finish@master
 ```
 ### Actions triggers
 The CodeQL action should be run on `push` events, and on a `schedule`. `Push` events allow us to do detailed analysis of the delta in a pull request, while the `schedule` event ensures that GitHub regularly scans the repository for the latest vulnerabilities, even if the repository becomes inactive. This action does not support the `pull_request` event.
@@ -83,7 +93,7 @@ A config file looks like this:
 ```yaml
 name: "My CodeQL config"
 
-queries: 
+queries:
   - name: In-repo queries (Runs the queries located in the my-queries folder of the repo)
     uses: ./my-queries
   - name: External Javascript QL pack (Runs a QL pack located in an external repo)

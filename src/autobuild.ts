@@ -12,7 +12,8 @@ async function run() {
 
   // Attempt to find a language to autobuild
   // We want pick the dominant language in the repo from the ones we're able to build
-  // Assume the first language we heard about
+  // The languages are sorted in order specified by user or by lines of code if we got
+  // them from the GitHub API, so try to build the first language on the list.
   const language = process.env[sharedEnv.CODEQL_ACTION_TRACED_LANGUAGES]?.split(',')[0];
 
   if (!language) {
@@ -20,7 +21,9 @@ async function run() {
     return;
   }
 
-  core.startGroup('Attempting to automatically build project in ' + language);
+  core.debug(`Detected dominant traced language: ${language}`);
+
+  core.startGroup(`Attempting to automatically build ${language} code`);
   // TODO: share config accross actions better via env variables
   const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
 

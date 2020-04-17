@@ -28,7 +28,13 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
 
       // Set up python environment
       if (language === 'python') {
+        await exec.exec('sudo apt-get update');
+        await exec.exec('sudo apt-get install python3-venv');
+        await exec.exec('python -m pip install packaging');
         const pythonSetupScript = path.resolve(JSON.parse(extractorPath), 'tools', 'setup.py');
+        process.env['LGTM_WORKSPACE'] = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
+        process.env['SEMMLE_DIST'] = JSON.parse(extractorPath);
+        core.debug('SEMMLE_DIST ' + JSON.parse(extractorPath));
         await exec.exec('python', [pythonSetupScript]);
         core.endGroup();
       }
@@ -104,8 +110,8 @@ async function run() {
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
-    const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
-    const databaseFolder = util.get_required_env_param(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
+    const codeqlCmd = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_CMD);
+    const databaseFolder = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
 
     const sarifFolder = core.getInput('output');
     await io.mkdirP(sarifFolder);

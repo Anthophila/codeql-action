@@ -97,8 +97,8 @@ async function run() {
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
-    const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
-    const databaseFolder = util.get_required_env_param(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
+    const codeqlCmd = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_CMD);
+    const databaseFolder = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
 
     const sarifFolder = core.getInput('output');
     await io.mkdirP(sarifFolder);
@@ -125,6 +125,6 @@ async function run() {
 }
 
 run().catch(e => {
-    core.setFailed("codeql/finish action failed: " + e);
-    console.log(e);
+  core.setFailed("codeql/finish action failed: " + e);
+  console.log(e);
 });

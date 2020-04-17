@@ -53,8 +53,7 @@ export function workspaceFolder(): string {
 /**
  * Get an environment parameter, but throw an error if it is not set.
  */
-// TODO rename to camelCase
-export function get_required_env_param(paramName: string): string {
+export function getRequiredEnvParam(paramName: string): string {
     const value = process.env[paramName];
     if (value === undefined) {
         throw new Error(paramName + ' environment variable must be set');

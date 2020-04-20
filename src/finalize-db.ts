@@ -57,7 +57,11 @@ async function checkoutExternalQueries(config: configUtils.Config) {
     if (!fs.existsSync(checkoutLocation)) {
       const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
       await exec.exec('git', ['clone', repoURL, checkoutLocation]);
-      await exec.exec('git', ['--git-dir=' + checkoutLocation + '/.git', 'checkout', externalQuery.ref]);
+      await exec.exec('git', [
+        '--work-tree=' + checkoutLocation,
+        '--git-dir=' + checkoutLocation + '/.git',
+        'checkout', externalQuery.ref,
+      ]);
     }
 
     config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));

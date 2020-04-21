@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as configUtils from './config-utils';
+import * as externalQueries from "./external-queries";
 import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
@@ -44,27 +45,6 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
     core.startGroup('Finalizing ' + language);
     await exec.exec(codeqlCmd, ['database', 'finalize', path.join(databaseFolder, language)]);
     core.endGroup();
-  }
-}
-
-async function checkoutExternalQueries(config: configUtils.Config) {
-  const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
-
-  for (const externalQuery of config.externalQueries) {
-    core.info('Checking out ' + externalQuery.repository);
-
-    const checkoutLocation = path.join(folder, externalQuery.repository);
-    if (!fs.existsSync(checkoutLocation)) {
-      const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
-      await exec.exec('git', ['clone', repoURL, checkoutLocation]);
-      await exec.exec('git', [
-        '--work-tree=' + checkoutLocation,
-        '--git-dir=' + checkoutLocation + '/.git',
-        'checkout', externalQuery.ref,
-      ]);
-    }
-
-    config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));
   }
 }
 
@@ -110,7 +90,7 @@ async function run() {
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
-    await checkoutExternalQueries(config);
+    await externalQueries.CheckoutExternalQueries(config);
 
     core.info('Analyzing database');
     await runQueries(codeqlCmd, databaseFolder, sarifFolder, config);

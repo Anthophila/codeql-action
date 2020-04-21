@@ -55,14 +55,14 @@ export async function upload(input: string) {
         const sarifFiles = fs.readdirSync(input)
             .filter(f => f.endsWith(".sarif"))
             .map(f => path.resolve(input, f));
-        await upload_files(sarifFiles);
+        await uploadFiles(sarifFiles);
     } else {
-        await upload_files([input]);
+        await uploadFiles([input]);
     }
 }
 
 // Uploads the given set of sarif files.
-async function upload_files(sarifFiles: string[]) {
+async function uploadFiles(sarifFiles: string[]) {
     core.startGroup("Uploading results");
     try {
         // Check if an upload has happened before. If so then abort.
@@ -74,10 +74,10 @@ async function upload_files(sarifFiles: string[]) {
             return;
         }
 
-        const commitOid = util.get_required_env_param('GITHUB_SHA');
-        const workflowRunIDStr = util.get_required_env_param('GITHUB_RUN_ID');
-        const ref = util.get_required_env_param('GITHUB_REF'); // it's in the form "refs/heads/master"
-        const analysisName = util.get_required_env_param('GITHUB_WORKFLOW');
+        const commitOid = util.getRequiredEnvParam('GITHUB_SHA');
+        const workflowRunIDStr = util.getRequiredEnvParam('GITHUB_RUN_ID');
+        const ref = util.getRequiredEnvParam('GITHUB_REF'); // it's in the form "refs/heads/master"
+        const analysisName = util.getRequiredEnvParam('GITHUB_WORKFLOW');
         const startedAt = process.env[sharedEnv.CODEQL_ACTION_STARTED_AT];
 
         core.debug("Uploading sarif files: " + JSON.stringify(sarifFiles));

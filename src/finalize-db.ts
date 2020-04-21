@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as configUtils from './config-utils';
+import * as externalQueries from "./external-queries";
 import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
@@ -47,23 +48,6 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function checkoutExternalQueries(config: configUtils.Config) {
-  const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
-
-  for (const externalQuery of config.externalQueries) {
-    core.info('Checking out ' + externalQuery.repository);
-
-    const checkoutLocation = path.join(folder, externalQuery.repository);
-    if (!fs.existsSync(checkoutLocation)) {
-      const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
-      await exec.exec('git', ['clone', repoURL, checkoutLocation]);
-      await exec.exec('git', ['--git-dir=' + checkoutLocation + '/.git', 'checkout', externalQuery.ref]);
-    }
-
-    config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));
-  }
-}
-
 // Runs queries and creates sarif files in the given folder
 async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder: string, config: configUtils.Config) {
   for (let database of fs.readdirSync(databaseFolder)) {
@@ -97,8 +81,8 @@ async function run() {
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
-    const codeqlCmd = util.get_required_env_param(sharedEnv.CODEQL_ACTION_CMD);
-    const databaseFolder = util.get_required_env_param(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
+    const codeqlCmd = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_CMD);
+    const databaseFolder = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
 
     const sarifFolder = core.getInput('output');
     await io.mkdirP(sarifFolder);
@@ -106,7 +90,7 @@ async function run() {
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
-    await checkoutExternalQueries(config);
+    await externalQueries.CheckoutExternalQueries(config);
 
     core.info('Analyzing database');
     await runQueries(codeqlCmd, databaseFolder, sarifFolder, config);
@@ -125,6 +109,6 @@ async function run() {
 }
 
 run().catch(e => {
-    core.setFailed("codeql/finish action failed: " + e);
-    console.log(e);
+  core.setFailed("codeql/finish action failed: " + e);
+  console.log(e);
 });

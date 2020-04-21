@@ -133,9 +133,8 @@ async function run() {
             return;
         }
 
-        // The config file MUST be parsed in the init action
-        // even if the config var is not used
-        const config = await configUtils.loadConfig();
+        // The config file MUST be parsed in the init action even if it is not used
+        await configUtils.loadConfig();
 
         core.startGroup('Load language configuration');
 

@@ -63,6 +63,10 @@ If you prefer to integrate this within an existing CI workflow, it should end up
 You can specify extra queries for CodeQL to execute using a config file. The queries must belong to a [QL pack](https://help.semmle.com/codeql/codeql-cli/reference/qlpack-overview.html) and can be in your repository or any public repository. You can choose a single .ql file, a folder containing multiple .ql files, or a .qls [query suite](https://help.semmle.com/codeql/codeql-cli/procedures/query-suites.html) file, or any combination of the above. To use queries from other repositories use the same syntax as when [using an action](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsuses).
 
 You can choose to ignore some files or folders from the analysis, or include additional files/folders for analysis. This *only* works for Javascript and Python analysis.
+Identifying potential files for extraction:
+- Scans each folder that's defined as `paths` in turn, traversing subfolders and looking for relevant files.
+- If it finds a subfolder that's defined as `paths-ignore`, stop traversing.
+- If a file or folder is both in `paths` and `paths-ignore`, the `paths-ignore` is ignored.
 
 Use the config-file parameter of the codeql/init action to enable the configuration file. For example:
 

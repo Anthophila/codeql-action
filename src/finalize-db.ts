@@ -88,11 +88,8 @@ async function resolveQueryLanguages(codeqlCmd: string, config: configUtils.Conf
 
     const resolveQueriesOutputObject = JSON.parse(resolveQueriesOutput);
 
-    const byLanguage = resolveQueriesOutputObject.byLanguage;
-    const languages = Object.keys(byLanguage);
-    for (const language of languages) {
-      const queries = Object.keys(byLanguage[language]);
-      res[language] = queries;
+    for (const [language, queries] of Object.entries(resolveQueriesOutputObject.byLanguage)) {
+      res[language] = Object.keys(<any>queries);
     }
 
     const noDeclaredLanguage = resolveQueriesOutputObject.noDeclaredLanguage;

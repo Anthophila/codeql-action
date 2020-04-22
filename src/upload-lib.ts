@@ -75,6 +75,7 @@ async function uploadFiles(sarifFiles: string[]) {
         }
 
         const commitOid = util.getRequiredEnvParam('GITHUB_SHA');
+        console.log("Commit OID is " + commitOid);
         const workflowRunIDStr = util.getRequiredEnvParam('GITHUB_RUN_ID');
         const ref = util.getRequiredEnvParam('GITHUB_REF'); // it's in the form "refs/heads/master"
         const analysisName = util.getRequiredEnvParam('GITHUB_WORKFLOW');

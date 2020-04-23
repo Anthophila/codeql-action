@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as configUtils from './config-utils';
+import * as externalQueries from "./external-queries";
 import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
@@ -66,21 +67,77 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function runQueries(codeqlCmd: string, resultsFolder: string, config: configUtils.Config): Promise<SARIFFile> {
-  const databaseFolder = path.join(resultsFolder, 'db');
+async function checkoutExternalQueries(config: configUtils.Config) {
+  const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
 
-  let combinedSarif: SARIFFile = {
-    version: null,
-    runs: []
-  };
+  for (const externalQuery of config.externalQueries) {
+    core.info('Checking out ' + externalQuery.repository);
 
-  const sarifFolder = path.join(resultsFolder, 'sarif');
-  await io.mkdirP(sarifFolder);
+    const checkoutLocation = path.join(folder, externalQuery.repository);
+    if (!fs.existsSync(checkoutLocation)) {
+      const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
+      await exec.exec('git', ['clone', repoURL, checkoutLocation]);
+      await exec.exec('git', ['--git-dir=' + checkoutLocation + '/.git', 'checkout', externalQuery.ref]);
+    }
+
+    config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));
+  }
+}
+
+async function resolveQueryLanguages(codeqlCmd: string, config: configUtils.Config): Promise<Map<string, string[]>> {
+  let res = new Map();
+
+  if (config.additionalQueries.length !== 0) {
+    let resolveQueriesOutput = '';
+    const options = {
+      listeners: {
+        stdout: (data: Buffer) => {
+          resolveQueriesOutput += data.toString();
+        }
+      }
+    };
+
+    await exec.exec(
+      codeqlCmd, [
+        'resolve',
+        'queries',
+        ...config.additionalQueries,
+        '--format=bylanguage'
+      ],
+      options);
+
+    const resolveQueriesOutputObject = JSON.parse(resolveQueriesOutput);
+
+    for (const [language, queries] of Object.entries(resolveQueriesOutputObject.byLanguage)) {
+      res[language] = Object.keys(<any>queries);
+    }
+
+    const noDeclaredLanguage = resolveQueriesOutputObject.noDeclaredLanguage;
+    const noDeclaredLanguageQueries = Object.keys(noDeclaredLanguage);
+    if (noDeclaredLanguageQueries.length !== 0) {
+      core.warning('Some queries do not declare a language:\n' + noDeclaredLanguageQueries.join('\n'));
+    }
+
+    const multipleDeclaredLanguages = resolveQueriesOutputObject.multipleDeclaredLanguages;
+    const multipleDeclaredLanguagesQueries = Object.keys(multipleDeclaredLanguages);
+    if (multipleDeclaredLanguagesQueries.length !== 0) {
+      core.warning('Some queries declare multiple languages:\n' + multipleDeclaredLanguagesQueries.join('\n'));
+    }
+  }
+
+  return res;
+}
+
+// Runs queries and creates sarif files in the given folder
+async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder: string, config: configUtils.Config) {
+  const queriesPerLanguage = await resolveQueryLanguages(codeqlCmd, config);
 
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);
 
+    const additionalQueries = queriesPerLanguage[database] || [];
     const sarifFile = path.join(sarifFolder, database + '.sarif');
+
     await exec.exec(codeqlCmd, [
       'database',
       'analyze',
@@ -89,22 +146,17 @@ async function runQueries(codeqlCmd: string, resultsFolder: string, config: conf
       '--output=' + sarifFile,
       '--no-sarif-add-snippets',
       database + '-code-scanning.qls',
-      ...config.inRepoQueries,
+      ...additionalQueries,
     ]);
-
-    let sarifObject = JSON.parse(fs.readFileSync(sarifFile, 'utf8'));
-    appendSarifRuns(combinedSarif, sarifObject);
 
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
     core.endGroup();
   }
-
-  return combinedSarif;
 }
 
 async function run() {
   try {
-    if (util.should_abort('finish') || !await util.reportActionStarting('finish')) {
+    if (util.should_abort('finish', true) || !await util.reportActionStarting('finish')) {
       return;
     }
     const config = await configUtils.loadConfig();
@@ -112,24 +164,22 @@ async function run() {
     core.exportVariable(sharedEnv.ODASA_TRACER_CONFIGURATION, '');
     delete process.env[sharedEnv.ODASA_TRACER_CONFIGURATION];
 
-    const codeqlCmd = process.env[sharedEnv.CODEQL_ACTION_CMD] || 'CODEQL_ACTION_CMD';
-    const resultsFolder = process.env[sharedEnv.CODEQL_ACTION_RESULTS] || 'CODEQL_ACTION_RESULTS';
-    const databaseFolder = path.join(resultsFolder, 'db');
+    const codeqlCmd = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_CMD);
+    const databaseFolder = util.getRequiredEnvParam(sharedEnv.CODEQL_ACTION_DATABASE_DIR);
+
+    const sarifFolder = core.getInput('output');
+    await io.mkdirP(sarifFolder);
 
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
-    core.info('Analyzing database');
-    const sarifResults = await runQueries(codeqlCmd, resultsFolder, config);
-    const sarifPayload = JSON.stringify(sarifResults);
+    await externalQueries.CheckoutExternalQueries(config);
 
-    // Write analysis result to a file
-    const outputFile = core.getInput('output_file');
-    await io.mkdirP(path.dirname(outputFile));
-    fs.writeFileSync(outputFile, sarifPayload);
+    core.info('Analyzing database');
+    await runQueries(codeqlCmd, databaseFolder, sarifFolder, config);
 
     if ('true' === core.getInput('upload')) {
-      await upload_lib.upload_sarif(outputFile);
+      await upload_lib.upload(sarifFolder);
     }
 
   } catch (error) {
@@ -142,6 +192,6 @@ async function run() {
 }
 
 run().catch(e => {
-    core.setFailed("codeql/finish action failed: " + e);
-    console.log(e);
+  core.setFailed("codeql/finish action failed: " + e);
+  console.log(e);
 });

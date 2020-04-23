@@ -10,22 +10,6 @@ import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
 
-interface SARIFFile {
-  version: string | null;
-  runs: any[];
-}
-
-function appendSarifRuns(combinedSarif: SARIFFile, newSarifRuns: SARIFFile) {
-  // Check SARIF version
-  if (combinedSarif.version === null) {
-    combinedSarif.version = newSarifRuns.version;
-  } else if (combinedSarif.version !== newSarifRuns.version) {
-    throw "Different SARIF versions encountered: " + combinedSarif.version + " and " + newSarifRuns.version;
-  }
-
-  combinedSarif.runs.push(...newSarifRuns.runs);
-}
-
 async function createdDBForScannedLanguages(codeqlCmd: string, databaseFolder: string) {
   const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
   if (scannedLanguages) {

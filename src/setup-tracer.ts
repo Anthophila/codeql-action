@@ -188,8 +188,6 @@ async function run() {
                 scannedLanguages.push(language);
             }
         }
-        core.exportVariable(sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES, scannedLanguages.join(','));
-
         const tracedLanguageKeys = Object.keys(tracedLanguages);
         if (tracedLanguageKeys.length > 0) {
             const mainTracerConfig = concatTracerConfigs(tracedLanguages);
@@ -214,6 +212,9 @@ async function run() {
                 }
             }
         }
+
+        core.exportVariable(sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES, scannedLanguages.join(','));
+        core.exportVariable(sharedEnv.CODEQL_ACTION_TRACED_LANGUAGES, tracedLanguageKeys.join(','));
 
         // TODO: make this a "private" environment variable of the action
         core.exportVariable(sharedEnv.CODEQL_ACTION_DATABASE_DIR, databaseFolder);

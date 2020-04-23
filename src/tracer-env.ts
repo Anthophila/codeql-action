@@ -1,4 +1,3 @@
-import * as core from '@actions/core';
 import * as fs from 'fs';
 
 const env = {};

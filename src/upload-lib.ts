@@ -4,7 +4,6 @@ import * as auth from '@actions/http-client/auth';
 import * as io from '@actions/io';
 import fileUrl from 'file-url';
 import * as fs from 'fs';
-import md5 from 'md5';
 import * as path from 'path';
 import zlib from 'zlib';
 

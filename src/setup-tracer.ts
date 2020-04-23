@@ -129,6 +129,8 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
 async function run() {
     try {
+        core.debug("init action running");
+
         if (util.should_abort('init', false) || !await util.reportActionStarting('init')) {
             return;
         }

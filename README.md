@@ -1,6 +1,11 @@
- # Usage
+ # CodeQL Action
+This action runs GitHub's industry-leading static analysis engine, CodeQL, against a repository's source code to find security vulnerabilities. It then automatically uploads the results to GitHub so they can be displayed in the repository's security tab. CodeQL runs an extensible set of [queries](https://github.com/semmle/ql), which have been developed by the community and the [GitHub Security Lab](https://securitylab.github.com/) to find common vulnerabilities in your code. 
+ 
+[Sign up for the Advanced Security beta](https://github.com/features/security/advanced-security/signup)
+ 
+ ## Usage
 
-To get Code Scanning results from CodeQL analysis on your repo you can use the following workflow as a template:
+To get code scanning results from CodeQL analysis on your repo you can use the following workflow as a template:
 
 ```yaml
 
@@ -69,8 +74,11 @@ If you prefer to integrate this within an existing CI workflow, it should end up
     - name: Perform CodeQL Analysis
       uses: Anthophila/codeql-action/codeql/finish@master
 ```
+### Actions triggers
+The CodeQL action should be run on `push` events, and on a `schedule`. `Push` events allow us to do detailed analysis of the delta in a pull request, while the `schedule` event ensures that GitHub regularly scans the repository for the latest vulnerabilities, even if the repository becomes inactive. This action does not support the `pull_request` event.
 
-You can specify extra queries for CodeQL to execute using a config file. The queries must belong to a [QL pack](https://help.semmle.com/codeql/codeql-cli/reference/qlpack-overview.html) and can be in your repository or any public repository. You can choose a single .ql file, a folder containing multiple .ql files, or a .qls [query suite](https://help.semmle.com/codeql/codeql-cli/procedures/query-suites.html) file, or any combination of the above. To use queries from other repositories use the same syntax as when [using an action](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsuses).
+### Configuration 
+You may optionally specify additional queries for CodeQL to execute by using a config file. The queries must belong to a [QL pack](https://help.semmle.com/codeql/codeql-cli/reference/qlpack-overview.html) and can be in your repository or any public repository. You can choose a single .ql file, a folder containing multiple .ql files, a .qls [query suite](https://help.semmle.com/codeql/codeql-cli/procedures/query-suites.html) file, or any combination of the above. To use queries from other repositories use the same syntax as when [using an action](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsuses).
 
 Use the config-file parameter of the codeql/init action to enable the configuration file. For example:
 
@@ -89,26 +97,20 @@ queries:
   - name: In-repo queries (Runs the queries located in the my-queries folder of the repo)
     uses: ./my-queries
   - name: External Javascript QL pack (Runs a QL pack located in an external repo)
-    uses: Anthophila/javascript-querypack@master
-  - name: External query (Runs a single query located in an external QL pack)
-    uses: Anthophila/python-querypack/show_ifs.ql@master
+    uses: /Semmle/ql/javascript/ql/src/Electron@master
+  - name: External query (Runs a single query located in an external QL pack) 
+    uses: Semmle/ql/javascript/ql/src/AngularJS/DeadAngularJSEventListener.ql@master 
   - name: Select query suite (Runs a query suites)
     uses: ./codeql-querypacks/complex-python-querypack/rootAndBar.qls
 ```
 
 Some example QL packs can be found here: https://github.com/Anthophila/python-querypack https://github.com/Anthophila/javascript-querypack
 
-NB: The CodeQL actions are intended to run on `push` events, not on `pull_request` events. Since the latter would produce analyses of no use, the CodeQL actions all terminate themselves without doing any work if they are run on a PR.
+## Troubleshooting
 
-If you have any questions you can find us on Slack at #dsp-code-scanning.
+### Trouble with Go dependencies
 
-And don't forget to leave your feedback on https://github.com/github/dsp-code-scanning/issues/515!
-
-# Troubleshooting
-
-## Trouble with Go dependencies
-
-### If you use a vendor directory
+#### If you use a vendor directory
 
 Try passing
 ```
@@ -132,7 +134,7 @@ Dependencies on public repositories should just work. If you have dependencies o
 ```
 before any codeql actions. A similar thing can also be done with a SSH key or deploy key.
 
-## C# using dotnet version 2 on linux
+### C# using dotnet version 2 on linux
 
 This unfortunately doesn't work properly unless `dotnet` is invoked with the `/p:UseSharedCompilation=false` flag. For example:
 ```
@@ -140,3 +142,6 @@ dotnet build /p:UseSharedCompilation=false
 ```
 Version 3 works fine and does not require the additional flag.
 
+## License
+
+This project is released under the [MIT License](LICENSE).

@@ -129,13 +129,14 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
 async function run() {
     try {
+        core.debug("init action running");
+
         if (util.should_abort('init', false) || !await util.reportActionStarting('init')) {
             return;
         }
 
-        // The config file MUST be parsed in the init action
-        // even if the config var is not used
-        const config = await configUtils.loadConfig();
+        // The config file MUST be parsed in the init action even if it is not used
+        await configUtils.loadConfig();
 
         core.startGroup('Load language configuration');
 

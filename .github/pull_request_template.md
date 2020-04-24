@@ -7,4 +7,4 @@
 - [ ] Confirm the [readme](https://github.com/github/codeql-action/blob/master/README.md) and [sarif-demo](https://github.com/Anthophila/sarif-demo) have been updated if necessary.
 
 ### Rollout plan for codeql-action
-github/dsp-code-scanning/pull/692
+https://github.com/github/dsp-code-scanning/blob/master/docs/code-scanning-action-rollout-plan.md

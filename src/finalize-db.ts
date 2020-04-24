@@ -51,23 +51,6 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function checkoutExternalQueries(config: configUtils.Config) {
-  const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
-
-  for (const externalQuery of config.externalQueries) {
-    core.info('Checking out ' + externalQuery.repository);
-
-    const checkoutLocation = path.join(folder, externalQuery.repository);
-    if (!fs.existsSync(checkoutLocation)) {
-      const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
-      await exec.exec('git', ['clone', repoURL, checkoutLocation]);
-      await exec.exec('git', ['--git-dir=' + checkoutLocation + '/.git', 'checkout', externalQuery.ref]);
-    }
-
-    config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));
-  }
-}
-
 async function resolveQueryLanguages(codeqlCmd: string, config: configUtils.Config): Promise<Map<string, string[]>> {
   let res = new Map();
 
@@ -157,7 +140,7 @@ async function run() {
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
-    await externalQueries.CheckoutExternalQueries(config);
+    await externalQueries.checkoutExternalQueries(config);
 
     core.info('Analyzing database');
     await runQueries(codeqlCmd, databaseFolder, sarifFolder, config);

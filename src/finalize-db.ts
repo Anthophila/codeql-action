@@ -26,19 +26,6 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
         }
       });
 
-      // Set up python environment
-      if (language === 'python') {
-        await exec.exec('sudo apt-get update');
-        await exec.exec('sudo apt-get install python3-venv');
-        await exec.exec('python -m pip install packaging');
-        const pythonSetupScript = path.resolve(JSON.parse(extractorPath), 'tools', 'setup.py');
-        process.env['LGTM_WORKSPACE'] = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
-        process.env['SEMMLE_DIST'] = JSON.parse(extractorPath);
-        core.debug('SEMMLE_DIST ' + JSON.parse(extractorPath));
-        await exec.exec('python', [pythonSetupScript]);
-        core.endGroup();
-      }
-
       // Set trace command
       const ext = process.platform === 'win32' ? '.cmd' : '.sh';
       const traceCommand = path.resolve(JSON.parse(extractorPath), 'tools', 'autobuild' + ext);

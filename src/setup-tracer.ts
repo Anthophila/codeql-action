@@ -173,6 +173,7 @@ async function run() {
 
         let tracedLanguages: { [key: string]: TracerConfig } = {};
         let scannedLanguages: string[] = [];
+        let autobuildLanguages: string[] = [];
 
         // TODO: replace this code once CodeQL supports multi-language tracing
         for (let language of languages) {
@@ -180,6 +181,9 @@ async function run() {
 
             // Init language database
             await exec.exec(codeqlSetup.cmd, ['database', 'init', languageDatabase, '--language=' + language, '--source-root=' + sourceRoot]);
+            if (['cpp', 'java', 'csharp', 'python'].includes(language)) {
+                autobuildLanguages.push(language);
+            }
             // TODO: add better detection of 'traced languages' instead of using a hard coded list
             if (['cpp', 'java', 'csharp'].includes(language)) {
                 const config: TracerConfig = await tracerConfig(codeqlSetup, languageDatabase);
@@ -214,7 +218,7 @@ async function run() {
         }
 
         core.exportVariable(sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES, scannedLanguages.join(','));
-        core.exportVariable(sharedEnv.CODEQL_ACTION_TRACED_LANGUAGES, tracedLanguageKeys.join(','));
+        core.exportVariable(sharedEnv.CODEQL_ACTION_AUTOBUILD_LANGUAGES, autobuildLanguages.join(','));
 
         // TODO: make this a "private" environment variable of the action
         core.exportVariable(sharedEnv.CODEQL_ACTION_DATABASE_DIR, databaseFolder);

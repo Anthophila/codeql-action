@@ -68,12 +68,16 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
     // Merge the environments
     const env: { [key: string]: string; } = {};
+    let copyExecutables = false;
     let envSize = 0;
     for (let v of Object.values(configs)) {
         for (let e of Object.entries(v.env)) {
             const name = e[0];
             const value = e[1];
-            if (name in env) {
+            // skip SEMMLE_COPY_EXECUTABLES_ROOT as it is handled separately
+            if (name === 'SEMMLE_COPY_EXECUTABLES_ROOT') {
+                copyExecutables = true;
+            } else if (name in env) {
                 if (env[name] !== value) {
                     throw Error('Incompatible values in environment parameter ' +
                         name + ': ' + env[name] + ' and ' + value);
@@ -106,7 +110,13 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
     const newLogFilePath = path.resolve(util.workspaceFolder(), 'compound-build-tracer.log');
     const spec = path.resolve(util.workspaceFolder(), 'compound-spec');
+    const tempFolder = path.resolve(util.workspaceFolder(), 'compound-temp');
     const newSpecContent = [newLogFilePath, totalCount.toString(10), ...totalLines];
+
+    if (copyExecutables) {
+        env['SEMMLE_COPY_EXECUTABLES_ROOT'] = tempFolder;
+        envSize += 1;
+    }
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
 

@@ -128,8 +128,13 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 }
 
 function includeAndExcludeAnalysisPaths(config: configUtils.Config, languages: string[]) {
-    core.exportVariable('LGTM_INDEX_INCLUDE', config.paths.join('\n'));
-    core.exportVariable('LGTM_INDEX_EXCLUDE', config.pathsIgnore.join('\n'));
+    if (config.paths.length !== 0) {
+        core.exportVariable('LGTM_INDEX_INCLUDE', config.paths.join('\n'));
+    }
+
+    if (config.pathsIgnore.length !== 0) {
+        core.exportVariable('LGTM_INDEX_EXCLUDE', config.pathsIgnore.join('\n'));
+    }
 
     function isInterpretedLanguage(language): boolean {
         return language === 'javascript' && language === 'python';

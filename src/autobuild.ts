@@ -18,7 +18,7 @@ async function autobuildPython() {
     await exec.exec('python3 -m pip install poetry');
     await exec.exec('python3 -m poetry install');
   } else if (fs.existsSync("setup.py")) {
-    await exec.exec('python3 setup.py');
+    await exec.exec('python3 setup.py install');
   } else {
     core.warning(
       'No python dependencies detected. If your project has dependencies to install, you must do so manually.'

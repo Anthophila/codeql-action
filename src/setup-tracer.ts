@@ -127,6 +127,21 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     return { env, spec };
 }
 
+function includeAndExcludeAnalysisPaths(config: configUtils.Config, languages: string[]) {
+    core.exportVariable('LGTM_INDEX_INCLUDE', config.paths.join('\n'));
+    core.exportVariable('LGTM_INDEX_EXCLUDE', config.pathsIgnore.join('\n'));
+
+    function isInterpretedLanguage(language): boolean {
+        return language === 'javascript' && language === 'python';
+    }
+
+    // Index include/exclude only work in javascript and python
+    // If some other language is detected/configured show a warning
+    if ((config.paths.length !== 0 || config.pathsIgnore.length !== 0) && !languages.every(isInterpretedLanguage)) {
+        core.warning('The "paths"/"paths-ignore" fields of the config only have effect for Javascript and Python');
+    }
+}
+
 async function run() {
     try {
         core.debug("init action running");
@@ -135,13 +150,12 @@ async function run() {
             return;
         }
 
-        // The config file MUST be parsed in the init action even if it is not used
-        await configUtils.loadConfig();
+        // The config file MUST be parsed in the init action
+        const config = await configUtils.loadConfig();
 
         core.startGroup('Load language configuration');
 
         const languages = await util.getLanguages();
-
         // If the languages parameter was not given and no languages were
         // detected then fail here as this is a workflow configuration error.
         if (languages.length === 0) {
@@ -150,6 +164,8 @@ async function run() {
         }
 
         core.endGroup();
+
+        includeAndExcludeAnalysisPaths(config, languages);
 
         const sourceRoot = path.resolve();
 

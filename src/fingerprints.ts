@@ -1,5 +1,4 @@
 import * as core from '@actions/core';
-import { defaultCoreCipherList } from "constants";
 import * as fs from 'fs';
 import Long from 'long';
 

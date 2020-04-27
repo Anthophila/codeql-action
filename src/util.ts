@@ -74,7 +74,8 @@ async function getLanguagesInRepo(): Promise<string[]> {
         'Go': 'go',
         'Java': 'java',
         'JavaScript': 'javascript',
-        'TypeScript': 'javascript'
+        'TypeScript': 'javascript',
+        'Python': 'python',
     };
     let repo_nwo = process.env['GITHUB_REPOSITORY']?.split("/");
     if (repo_nwo) {

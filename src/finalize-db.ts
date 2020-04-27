@@ -5,12 +5,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import * as configUtils from './config-utils';
+import * as externalQueries from "./external-queries";
 import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
 
-async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
-  // Create db for scanned languages
+async function createdDBForScannedLanguages(codeqlCmd: string, databaseFolder: string) {
   const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
   if (scannedLanguages) {
     for (const language of scannedLanguages.split(',')) {
@@ -38,6 +38,10 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
       core.endGroup();
     }
   }
+}
+
+async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
+  await createdDBForScannedLanguages(codeqlCmd, databaseFolder);
 
   const languages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES] || '';
   for (const language of languages.split(',')) {
@@ -47,28 +51,58 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
   }
 }
 
-async function checkoutExternalQueries(config: configUtils.Config) {
-  const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
+async function resolveQueryLanguages(codeqlCmd: string, config: configUtils.Config): Promise<Map<string, string[]>> {
+  let res = new Map();
 
-  for (const externalQuery of config.externalQueries) {
-    core.info('Checking out ' + externalQuery.repository);
+  if (config.additionalQueries.length !== 0) {
+    let resolveQueriesOutput = '';
+    const options = {
+      listeners: {
+        stdout: (data: Buffer) => {
+          resolveQueriesOutput += data.toString();
+        }
+      }
+    };
 
-    const checkoutLocation = path.join(folder, externalQuery.repository);
-    if (!fs.existsSync(checkoutLocation)) {
-      const repoURL = 'https://github.com/' + externalQuery.repository + '.git';
-      await exec.exec('git', ['clone', repoURL, checkoutLocation]);
-      await exec.exec('git', ['--git-dir=' + checkoutLocation + '/.git', 'checkout', externalQuery.ref]);
+    await exec.exec(
+      codeqlCmd, [
+        'resolve',
+        'queries',
+        ...config.additionalQueries,
+        '--format=bylanguage'
+      ],
+      options);
+
+    const resolveQueriesOutputObject = JSON.parse(resolveQueriesOutput);
+
+    for (const [language, queries] of Object.entries(resolveQueriesOutputObject.byLanguage)) {
+      res[language] = Object.keys(<any>queries);
     }
 
-    config.additionalQueries.push(path.join(checkoutLocation, externalQuery.path));
+    const noDeclaredLanguage = resolveQueriesOutputObject.noDeclaredLanguage;
+    const noDeclaredLanguageQueries = Object.keys(noDeclaredLanguage);
+    if (noDeclaredLanguageQueries.length !== 0) {
+      core.warning('Some queries do not declare a language:\n' + noDeclaredLanguageQueries.join('\n'));
+    }
+
+    const multipleDeclaredLanguages = resolveQueriesOutputObject.multipleDeclaredLanguages;
+    const multipleDeclaredLanguagesQueries = Object.keys(multipleDeclaredLanguages);
+    if (multipleDeclaredLanguagesQueries.length !== 0) {
+      core.warning('Some queries declare multiple languages:\n' + multipleDeclaredLanguagesQueries.join('\n'));
+    }
   }
+
+  return res;
 }
 
 // Runs queries and creates sarif files in the given folder
 async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder: string, config: configUtils.Config) {
+  const queriesPerLanguage = await resolveQueryLanguages(codeqlCmd, config);
+
   for (let database of fs.readdirSync(databaseFolder)) {
     core.startGroup('Analyzing ' + database);
 
+    const additionalQueries = queriesPerLanguage[database] || [];
     const sarifFile = path.join(sarifFolder, database + '.sarif');
 
     await exec.exec(codeqlCmd, [
@@ -79,7 +113,7 @@ async function runQueries(codeqlCmd: string, databaseFolder: string, sarifFolder
       '--output=' + sarifFile,
       '--no-sarif-add-snippets',
       database + '-code-scanning.qls',
-      ...config.additionalQueries,
+      ...additionalQueries,
     ]);
 
     core.debug('SARIF results for database ' + database + ' created at "' + sarifFile + '"');
@@ -106,7 +140,7 @@ async function run() {
     core.info('Finalizing database creation');
     await finalizeDatabaseCreation(codeqlCmd, databaseFolder);
 
-    await checkoutExternalQueries(config);
+    await externalQueries.checkoutExternalQueries(config);
 
     core.info('Analyzing database');
     await runQueries(codeqlCmd, databaseFolder, sarifFolder, config);

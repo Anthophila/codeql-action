@@ -1,9 +1,30 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import * as fs from 'fs';
 import * as path from 'path';
 
 import * as sharedEnv from './shared-environment';
 import * as util from './util';
+
+
+async function autobuildPython() {
+  await exec.exec('pip3 install --upgrade pip setuptools wheel');
+  if (fs.existsSync("requirements.txt")) {
+    await exec.exec('pip3 install -r requirements.txt');
+  } else if (fs.existsSync("Pipfile")) {
+    await exec.exec('pip3 install pipenv');
+    await exec.exec('pipenv install');
+  } else if (fs.existsSync("pyproject.toml")) {
+    await exec.exec('pip3 install poetry');
+    await exec.exec('poetry install');
+  } else if (fs.existsSync("setup.py")) {
+    await exec.exec('python3 setup.py');
+  } else {
+    core.warning(
+      'No python dependencies detected. If your project has dependencies to install, you must do so manually.'
+    );
+  }
+}
 
 async function run() {
   try {
@@ -43,13 +64,7 @@ async function run() {
 
     // In the case of python we need to run the setup.py script
     if (language === 'python') {
-      await exec.exec('sudo apt-get update');
-      await exec.exec('sudo apt-get install python3-venv');
-      await exec.exec('python -m pip install packaging');
-      const pythonSetupScript = path.resolve(JSON.parse(extractorPath), 'tools', 'setup.py');
-      process.env['LGTM_WORKSPACE'] = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
-      process.env['SEMMLE_DIST'] = JSON.parse(extractorPath);
-      await exec.exec('python', [pythonSetupScript]);
+      await autobuildPython();
 
       // for the other languages we run the standard autobuilder
     } else {

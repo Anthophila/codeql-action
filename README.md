@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
 
 
-    # CodeQL runs on ubuntu-latest and windows-latest
+    # CodeQL runs on ubuntu-latest, windows-latest, and macos-latest
     runs-on: ubuntu-latest
 
     steps:

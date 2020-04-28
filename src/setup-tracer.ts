@@ -4,6 +4,7 @@ import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import * as analysisPaths from './analysis-paths';
 import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
@@ -127,6 +128,8 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     return { env, spec };
 }
 
+
+
 async function run() {
     try {
         core.debug("init action running");
@@ -135,13 +138,12 @@ async function run() {
             return;
         }
 
-        // The config file MUST be parsed in the init action even if it is not used
-        await configUtils.loadConfig();
+        // The config file MUST be parsed in the init action
+        const config = await configUtils.loadConfig();
 
         core.startGroup('Load language configuration');
 
         const languages = await util.getLanguages();
-
         // If the languages parameter was not given and no languages were
         // detected then fail here as this is a workflow configuration error.
         if (languages.length === 0) {
@@ -150,6 +152,8 @@ async function run() {
         }
 
         core.endGroup();
+
+        analysisPaths.includeAndExcludeAnalysisPaths(config, languages);
 
         const sourceRoot = path.resolve();
 

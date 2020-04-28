@@ -10,8 +10,7 @@ import * as sharedEnv from './shared-environment';
 import * as upload_lib from './upload-lib';
 import * as util from './util';
 
-async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
-  // Create db for scanned languages
+async function createdDBForScannedLanguages(codeqlCmd: string, databaseFolder: string) {
   const scannedLanguages = process.env[sharedEnv.CODEQL_ACTION_SCANNED_LANGUAGES];
   if (scannedLanguages) {
     for (const language of scannedLanguages.split(',')) {
@@ -39,6 +38,10 @@ async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: strin
       core.endGroup();
     }
   }
+}
+
+async function finalizeDatabaseCreation(codeqlCmd: string, databaseFolder: string) {
+  await createdDBForScannedLanguages(codeqlCmd, databaseFolder);
 
   const languages = process.env[sharedEnv.CODEQL_ACTION_LANGUAGES] || '';
   for (const language of languages.split(',')) {

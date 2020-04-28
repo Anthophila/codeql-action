@@ -38,8 +38,7 @@ jobs:
       #   languages: go, javascript, csharp, python, cpp, java
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see bellow)
-    # custom build steps.
+    # If this step fails, then you should remove it and run the build manually (see below).
     - name: Autobuild
       uses: Anthophila/codeql-action/codeql/autobuild@master
 

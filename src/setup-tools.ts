@@ -1,7 +1,5 @@
 import * as core from '@actions/core';
-import * as io from '@actions/io';
 import * as toolcache from '@actions/tool-cache';
-import * as fs from 'fs';
 import * as path from 'path';
 
 export class CodeQLSetup {
@@ -39,7 +37,7 @@ export async function setupCodeQL(): Promise<CodeQLSetup> {
         core.debug(`CodeQL found in cache ${codeqlFolder}`);
     } else {
         const codeqlPath = await toolcache.downloadTool(codeqlURL);
-        const codeqlExtracted = await toolcache.extractZip(codeqlPath);
+        const codeqlExtracted = await toolcache.extractTar(codeqlPath);
         codeqlFolder = await toolcache.cacheDir(codeqlExtracted, 'CodeQL', version);
     }
     return new CodeQLSetup(path.join(codeqlFolder, 'codeql'));

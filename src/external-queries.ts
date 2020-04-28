@@ -5,7 +5,7 @@ import * as path from 'path';
 
 import * as configUtils from './config-utils';
 
-export async function CheckoutExternalQueries(config: configUtils.Config) {
+export async function checkoutExternalQueries(config: configUtils.Config) {
   const folder = process.env['RUNNER_WORKSPACE'] || '/tmp/codeql-action';
 
   for (const externalQuery of config.externalQueries) {

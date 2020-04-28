@@ -4,6 +4,7 @@ import * as io from '@actions/io';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import * as analysisPaths from './analysis-paths';
 import * as configUtils from './config-utils';
 import * as setuptools from './setup-tools';
 import * as sharedEnv from './shared-environment';
@@ -67,12 +68,16 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
     // Merge the environments
     const env: { [key: string]: string; } = {};
+    let copyExecutables = false;
     let envSize = 0;
     for (let v of Object.values(configs)) {
         for (let e of Object.entries(v.env)) {
             const name = e[0];
             const value = e[1];
-            if (name in env) {
+            // skip SEMMLE_COPY_EXECUTABLES_ROOT as it is handled separately
+            if (name === 'SEMMLE_COPY_EXECUTABLES_ROOT') {
+                copyExecutables = true;
+            } else if (name in env) {
                 if (env[name] !== value) {
                     throw Error('Incompatible values in environment parameter ' +
                         name + ': ' + env[name] + ' and ' + value);
@@ -105,7 +110,13 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
 
     const newLogFilePath = path.resolve(util.workspaceFolder(), 'compound-build-tracer.log');
     const spec = path.resolve(util.workspaceFolder(), 'compound-spec');
+    const tempFolder = path.resolve(util.workspaceFolder(), 'compound-temp');
     const newSpecContent = [newLogFilePath, totalCount.toString(10), ...totalLines];
+
+    if (copyExecutables) {
+        env['SEMMLE_COPY_EXECUTABLES_ROOT'] = tempFolder;
+        envSize += 1;
+    }
 
     fs.writeFileSync(spec, newSpecContent.join('\n'));
 
@@ -127,21 +138,20 @@ function concatTracerConfigs(configs: { [lang: string]: TracerConfig }): TracerC
     return { env, spec };
 }
 
+
+
 async function run() {
     try {
-        core.debug("init action running");
-
         if (util.should_abort('init', false) || !await util.reportActionStarting('init')) {
             return;
         }
 
-        // The config file MUST be parsed in the init action even if it is not used
-        await configUtils.loadConfig();
+        // The config file MUST be parsed in the init action
+        const config = await configUtils.loadConfig();
 
         core.startGroup('Load language configuration');
 
         const languages = await util.getLanguages();
-
         // If the languages parameter was not given and no languages were
         // detected then fail here as this is a workflow configuration error.
         if (languages.length === 0) {
@@ -150,6 +160,8 @@ async function run() {
         }
 
         core.endGroup();
+
+        analysisPaths.includeAndExcludeAnalysisPaths(config, languages);
 
         const sourceRoot = path.resolve();
 

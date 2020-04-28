@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
 
 
-    # CodeQL runs on ubuntu-latest and windows-latest
+    # CodeQL runs on ubuntu-latest, windows-latest, and macos-latest
     runs-on: ubuntu-latest
 
     steps:
@@ -38,8 +38,7 @@ jobs:
       #   languages: go, javascript, csharp, python, cpp, java
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see bellow)
-    # custom build steps.
+    # If this step fails, then you should remove it and run the build manually (see below).
     - name: Autobuild
       uses: Anthophila/codeql-action/codeql/autobuild@master
 
@@ -80,6 +79,12 @@ The CodeQL action should be run on `push` events, and on a `schedule`. `Push` ev
 ### Configuration 
 You may optionally specify additional queries for CodeQL to execute by using a config file. The queries must belong to a [QL pack](https://help.semmle.com/codeql/codeql-cli/reference/qlpack-overview.html) and can be in your repository or any public repository. You can choose a single .ql file, a folder containing multiple .ql files, a .qls [query suite](https://help.semmle.com/codeql/codeql-cli/procedures/query-suites.html) file, or any combination of the above. To use queries from other repositories use the same syntax as when [using an action](https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepsuses).
 
+You can choose to ignore some files or folders from the analysis, or include additional files/folders for analysis. This *only* works for Javascript and Python analysis.
+Identifying potential files for extraction:
+- Scans each folder that's defined as `paths` in turn, traversing subfolders and looking for relevant files.
+- If it finds a subfolder that's defined as `paths-ignore`, stop traversing.
+- If a file or folder is both in `paths` and `paths-ignore`, the `paths-ignore` is ignored.
+
 Use the config-file parameter of the codeql/init action to enable the configuration file. For example:
 
 ```yaml
@@ -102,6 +107,13 @@ queries:
     uses: Semmle/ql/javascript/ql/src/AngularJS/DeadAngularJSEventListener.ql@master 
   - name: Select query suite (Runs a query suites)
     uses: ./codeql-querypacks/complex-python-querypack/rootAndBar.qls
+
+paths:
+  - src/util.ts
+
+paths-ignore:
+ - src
+ - lib
 ```
 
 Some example QL packs can be found here: https://github.com/Anthophila/python-querypack https://github.com/Anthophila/javascript-querypack

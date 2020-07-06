@@ -158,6 +158,8 @@ async function run() {
   await util.reportActionSucceeded('finish');
 }
 
+util.failWithUpgradeMessage();
+
 run().catch(e => {
   core.setFailed("codeql/finish action failed: " + e);
   console.log(e);

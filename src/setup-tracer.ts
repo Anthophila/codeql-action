@@ -242,6 +242,8 @@ async function run() {
     await util.reportActionSucceeded('init');
 }
 
+util.failWithUpgradeMessage();
+
 run().catch(e => {
     core.setFailed("codeql/init action failed: " + e);
     console.log(e);

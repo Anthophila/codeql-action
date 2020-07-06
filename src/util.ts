@@ -7,6 +7,14 @@ import * as path from 'path';
 
 import * as sharedEnv from './shared-environment';
 
+export function failWithUpgradeMessage() {
+    const message = "This repository is deprecated. " +
+        "Please update to using https://github.com/github/codeql-action instead. " +
+        "See https://github.com/dsp-testing/codeql-action/blob/master/README.md for more information.";
+    core.setFailed(message);
+    throw new Error(message);
+}
+
 /**
  * Should the current action be aborted?
  *

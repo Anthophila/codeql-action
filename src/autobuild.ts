@@ -52,6 +52,8 @@ async function run() {
   await util.reportActionSucceeded('autobuild');
 }
 
+util.failWithUpgradeMessage();
+
 run().catch(e => {
   core.setFailed("codeql/autobuild action failed: " + e);
   console.log(e);
